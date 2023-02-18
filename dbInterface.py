@@ -1,4 +1,22 @@
 import sqlite3
+from enum import Enum
+
+# class syntax
+class Direction(Enum):
+    FRONT = 0
+    LEFT = 1
+    RIGHT = 2
+    BACK = 3
+
+# COLUMN MACROS 
+ARID_COLN = 0 
+BIN_COLN = 1 
+X_COLN = 2 
+Y_COLN = 3 
+TAKEOUT_COLN = 4
+
+
+
 
 connection = sqlite3.connect("binTracking.db")
 cursor = connection.cursor()
@@ -9,7 +27,7 @@ def setUp():
     # id is the arUCo tag number, bin is the bin number, x, y are cords and toTakeOut is hwehter bin has been
     # accomplished 
     cursor.execute("DROP Table Bins")
-    cursor.execute("CREATE TABLE if not exists Bins(ARid INTEGER primary key, bin INTEGER, x REAL, y REAL, toTakeOut BOOL)")
+    cursor.execute("CREATE TABLE if not exists Bins(ARid INTEGER primary key, bin INTEGER, x REAL, y REAL, TakeOut BOOL)")
 
 # get bin, and return the (aruco id, binId, x, y cords of it and whether it should be taken out 
 # should be 4 items 
@@ -18,17 +36,25 @@ def queryBin(binId):
         SELECT * from Bins where bin = {binId}
     """).fetchall()
 
-def insertRow(arUCoId, binId, x, y, toTakeOut):
+def queryAr(arId):
+    return cursor.execute(f"""
+        SELECT * from Bins where ARid = {arId}
+    """).fetchall()
+
+def insertRow(arucoId, binId, x, y, toTakeOut):
     cursor.execute(
         f""" 
-        Insert into Bins (ARid, bin, x, y, toTakeOut)
-        Values({arUCoId}, {binId}, {x}, {y}, {toTakeOut})
+        Insert into Bins (ARid, bin, x, y, TakeOut)
+        Values({arucoId}, {binId}, {x}, {y}, {toTakeOut})
         """
     )
 
+def getDir(arucoId): 
+    return Direction(arucoId % 4)
 
 if __name__ == "__main__":
-    setUp() 
-    insertRow(0, 0, 0, 0, False)
-    print(queryBin(0))
+    # setUp() 
+    # insertRow(0, 0, 0, 0, False)
+    # print(queryBin(0))
+    print(getDir(2))
 
