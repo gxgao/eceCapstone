@@ -1,9 +1,10 @@
-import cv2 
+import cv2
 import imutils
 import pdb
-import numpy as np 
+import numpy as np
 from imutils.video import VideoStream
-import time 
+import time
+from cameraCalibration import loadCoefficients
 
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
@@ -30,23 +31,32 @@ ARUCO_DICT = {
 }
 
 
-## aruco class setup 
+# aruco class setup
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_100)
-parameters =  cv2.aruco.DetectorParameters()
-detector = cv2.aruco.ArucoDetector(dictionary, parameters)
+parameters = cv2.aruco.DetectorParameters_create()
 
-vs = VideoStream(src=0).start()
+# detector = cv2.aruco.ArucoDetector(dictionary, parameters)
+
+vs = VideoStream(src=1).start()
 time.sleep(2.0)
+
+cMtx, cDist = loadCoefficients()
 
 # loop over the frames from the video stream
 while 1:
 	# grab the frame from the threaded video stream and resize it
 	# to have a maximum width of 1000 pixels
-    frame = vs.read()
-    frame = imutils.resize(frame, width=1000)
+	frame = vs.read()
+	frame = imutils.resize(frame, width=1000)
 	# detect ArUco markers in the input frame
-    markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame) 
-    
-    if markerIds != None:
-        print(markerIds)
+    # markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame)
+	markerCorners, markerIds, rejected = cv2.aruco.detectMarkers(
+	    frame, dictionary, parameters=parameters)
+
+	if len(markerIds) != 0:
+		print(markerCorners)
+		markerSizeInCM = 3.1
+		rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)
+        
+		print(tvec) 
 
