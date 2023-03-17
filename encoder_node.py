@@ -14,7 +14,6 @@ def LeftEncoderPub():
     pub = rospy.Publisher('rightEncoder', Int16, queue_size=10)
     # node name is right encoder publisher 
     rospy.init_node('rightEncoderPublisher', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
     return pub
 
 
@@ -28,6 +27,7 @@ if __name__ == '__main__':
         try:
             rpub.publish(2)
             lpub.publish(1)
+
             rpub.sleep()
 
             lpub.sleep()
