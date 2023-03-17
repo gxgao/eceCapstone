@@ -18,11 +18,11 @@ def LeftEncoderPub():
 
 
 if __name__ == '__main__':
-
-    rate = rospy.Rate(10) #10hz
+    
     rpub = rightEncoderPub() 
     lpub = LeftEncoderPub() 
-
+    rate = rospy.Rate(10) #10hz
+    
     while not rospy.is_shutdown():
         try:
             rpub.publish(2)
