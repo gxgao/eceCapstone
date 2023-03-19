@@ -15,7 +15,7 @@ def rightEncoderPub():
     rate = rospy.Rate(10) #10hz
     while not rospy.is_shutdown():
         try:
-            pub.publish(bot.get_encoder_counts()['right'])
+            pub.publish(bot.get_sensors().encoder_counts_right )
     #        lpub.publish(1)
 
             rate.sleep()
@@ -32,7 +32,7 @@ def LeftEncoderPub():
     rate = rospy.Rate(10) #10hz
     while not rospy.is_shutdown():
         try:
-            pub.publish(bot.get_encoder_counts()['left']  )
+            pub.publish(bot.get_sensors().encoder_counts_left  )
     #        lpub.publish(1)
 
             rate.sleep()
