@@ -32,7 +32,7 @@ def LeftEncoderPub():
     rate = rospy.Rate(10) #10hz
     while not rospy.is_shutdown():
         try:
-            pub.publish(bot.get_encoder_counts()['right']  )
+            pub.publish(bot.get_encoder_counts()['left']  )
     #        lpub.publish(1)
 
             rate.sleep()
