@@ -3,12 +3,62 @@
 from pycreate2 import Create2
 import time
 from sshkeyboard import listen_keyboard
+from multiprocessing import Process
+
+import rospy
+from std_msgs.msg import Int16
+
+
+def rightEncoderPub():
+    pub = rospy.Publisher('RightEncoder', Int16, queue_size=10)
+    rospy.init_node('rightEncoderPublisher', anonymous=True)
+    rate = rospy.Rate(10) #10hz
+    while not rospy.is_shutdown():
+        try:
+            pub.publish(bot.get_encoder_counts()['right'])
+    #        lpub.publish(1)
+
+            rate.sleep()
+    #       lpub.sleep()
+        except rospy.ROSInterruptException:
+            pass
+ 
+
+def LeftEncoderPub():
+    # topic is right encoder 
+    pub = rospy.Publisher('leftEncoder', Int16, queue_size=10)
+    # node name is right encoder publisher 
+    rospy.init_node('leftEncoderPublisher', anonymous=True)
+    rate = rospy.Rate(10) #10hz
+    while not rospy.is_shutdown():
+        try:
+            pub.publish(bot.get_encoder_counts()['right']  )
+    #        lpub.publish(1)
+
+            rate.sleep()
+    #       lpub.sleep()
+        except rospy.ROSInterruptException:
+            pass
+
 
 port = "/dev/ttyUSB1"
 bot = Create2(port, 19200) # (port, baudrate)
 
 # Start the Create2
 bot.start()
+
+procs = []
+
+# print(name)
+proc = Process(target=rightEncoderPub)
+procs.append(proc)
+proc.start()
+
+proc = Process(target=LeftEncoderPub)
+procs.append(proc)
+proc.start()
+
+
 
 # Put the bot into safe mode for driving
 bot.safe()
@@ -76,7 +126,14 @@ listen_keyboard(
 )
 
 bot.drive_stop()
+
+# complete the processes
+for proc in procs:
+    proc.join()
+
 bot.close()
+
+
 # Main drive loop
 #try:
 #    while True:
