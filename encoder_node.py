@@ -3,6 +3,9 @@
 
 import rospy
 from std_msgs.msg import Int16
+import rospy
+from std_msgs.msg import Int16
+
 
 def rightEncoderPub():
     pub = rospy.Publisher('RightEncoder', Int16, queue_size=10)
@@ -10,7 +13,7 @@ def rightEncoderPub():
     rate = rospy.Rate(10) #10hz
     while not rospy.is_shutdown():
         try:
-            pub.publish(2)
+            pub.publish(bot.get_encoder_counts()['right'])
     #        lpub.publish(1)
 
             rate.sleep()
@@ -27,7 +30,7 @@ def LeftEncoderPub():
     rate = rospy.Rate(10) #10hz
     while not rospy.is_shutdown():
         try:
-            pub.publish(2)
+            pub.publish(bot.LeftEncoderValue  )
     #        lpub.publish(1)
 
             rate.sleep()
