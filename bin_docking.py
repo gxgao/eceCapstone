@@ -1,3 +1,4 @@
+
 import cv2
 import imutils
 import pdb
@@ -5,6 +6,7 @@ import numpy as np
 from imutils.video import VideoStream
 import time
 from cameraCalibration import loadCoefficients
+from pycreate2 import Create2
 
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
@@ -42,6 +44,10 @@ time.sleep(2.0)
 
 cMtx, cDist = loadCoefficients()
 
+bot = Create2("/dev/ttyUSB1")
+bot.start()
+bot.safe()
+bot.full()
 # loop over the frames from the video stream
 while 1:
 	# grab the frame from the threaded video stream and resize it
@@ -49,14 +55,19 @@ while 1:
 	frame = vs.read()
 	frame = imutils.resize(frame, width=1000)
 	# detect ArUco markers in the input frame
-    # markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame)
+	# markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame)
 	markerCorners, markerIds, rejected = cv2.aruco.detectMarkers(
-	    frame, dictionary, parameters=parameters)
+		frame, dictionary, parameters=parameters)
 
 	if len(markerIds) != 0:
 		print(markerCorners)
 		markerSizeInCM = 3.1
 		rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)
-        
-		print(tvec) 
-
+		# first vector ideally only one aruco tag in frame 
+		x, y, z = tvec[0][0]
+	
+		if z >= 25:
+			bot.drive_direct(100, 100)
+			time.sleep(.5)
+			bot.drive_stop()
+		
