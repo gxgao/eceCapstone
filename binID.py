@@ -34,7 +34,8 @@ class BinTracker:
     def checkIds(self, markerIds):
         dbBins = [] 
         for mId in markerIds: 
-            dbBins += dbInterface.queryBin(mId)
+            print(mId[0])
+            dbBins += dbInterface.queryBin(mId[0])
         bins = [] 
         for aruco, binId, x, y, takeOut in dbBins: 
 

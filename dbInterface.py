@@ -67,7 +67,7 @@ def updateLoc(arucoId, x, y):
     ) 
     
 def saveDbChanges():
-    cursor.commit() 
+    connection.commit() 
 
 
 
@@ -75,5 +75,8 @@ def saveDbChanges():
 if __name__ == "__main__":
     setUp() 
     insertRow(0, 0, 0, 0, False)
+
     print(queryBin(0))
+    saveDbChanges() 
+    connection.close() 
 

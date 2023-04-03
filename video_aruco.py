@@ -5,6 +5,7 @@ import numpy as np
 from imutils.video import VideoStream
 import time
 from cameraCalibration import loadCoefficients
+import binID
 
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
@@ -37,10 +38,12 @@ parameters = cv2.aruco.DetectorParameters_create()
 
 # detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
-vs = VideoStream(src=2).start()
+vs = VideoStream(src=0).start()
 time.sleep(2.0)
 
 cMtx, cDist = loadCoefficients()
+
+binTracker = binID.BinTracker() 
 
 # loop over the frames from the video stream
 while 1:
@@ -53,10 +56,13 @@ while 1:
 	markerCorners, markerIds, rejected = cv2.aruco.detectMarkers(
 	    frame, dictionary, parameters=parameters)
 
-	if len(markerIds) != 0:
-		print(markerCorners)
+	if markerIds is not None and len(markerIds) != 0:
+		bins = binTracker.checkIds(markerIds)
+		print("found bins: ", bins) 
+
+		# print(markerCorners)
 		markerSizeInCM = 3.1
 		rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)
         
-		print(tvec) 
+		# print(tvec) 
 
