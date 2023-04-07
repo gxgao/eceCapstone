@@ -77,5 +77,7 @@ if __name__ == "__main__":
     insertRow(0, 0, 0, 0, False)
     insertRow(1, 1, 1, 1, True)
     print(queryBin(0))
-    saveDbChanges()
-    connection.close()
+    saveDbChanges() 
+    connection.close() 
+
+

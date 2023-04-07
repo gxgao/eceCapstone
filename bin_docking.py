@@ -48,6 +48,7 @@ bot = Create2("/dev/ttyUSB1")
 bot.start()
 bot.safe()
 bot.full()
+<<<<<<< HEAD
 bot.drive_direct(100, 100)
 time.sleep(2)
 bot.drive_stop()
@@ -79,4 +80,14 @@ while 1:
                 bot.drive_direct(l, r)
                 time.sleep(.5)
                 bot.drive_stop()
+		print(markerCorners)
+		markerSizeInCM = 3.1
+		rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)
+		# first vector ideally only one aruco tag in frame 
+		x, y, z = tvec[0][0]
+	
+		if z >= 25:
+			bot.drive_direct(100, 100)
+			time.sleep(.5)
+			bot.drive_stop()
 		
