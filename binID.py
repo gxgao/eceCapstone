@@ -23,7 +23,10 @@ class Bin:
         return self.arucoId, self.binId, self.x, self.y, self.takeOut, self.dir  
     
     def getDir(self):
-        return self.dir 
+        return self.dir
+
+    def __repr__(self):
+        return f"Bin: {self.binId}, x: {self.x}, y: {self.y}, takeOut? : {self.takeOut}"
 
 class BinTracker: 
 
@@ -34,7 +37,7 @@ class BinTracker:
     def checkIds(self, markerIds):
         dbBins = [] 
         for mId in markerIds: 
-            dbBins += dbInterface.queryBin(mId)
+            dbBins += dbInterface.queryBin(mId[0])
         bins = [] 
         for aruco, binId, x, y, takeOut in dbBins: 
 

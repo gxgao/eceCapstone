@@ -335,12 +335,12 @@ def generateCallibration():
     # pickle.dump((mtx, dist, rvecs, tvecs), f)
     # f.close()
     # Save coefficients into a file
-    save_coefficients(mtx, dist, IMAGES_DIR + "\\" + CAM_COEFF_NAME) #IMAGES_DIR + "\\" + "calibration_charuco.yml")
+    save_coefficients(mtx, dist, IMAGES_DIR + "/" + CAM_COEFF_NAME) #IMAGES_DIR + "\\" + "calibration_charuco.yml")
 
 # Load coefficients pickling not sure if needed 
 def loadCoefficients():
     
-    mtx, dist = load_coefficients(IMAGES_DIR + "\\" + CAM_COEFF_NAME)
+    mtx, dist = load_coefficients(IMAGES_DIR + "/" + CAM_COEFF_NAME)
 
     return mtx, dist
 

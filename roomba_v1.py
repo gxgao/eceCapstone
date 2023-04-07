@@ -47,16 +47,17 @@ bot = Create2(port, 19200) # (port, baudrate)
 # Start the Create2
 bot.start()
 
+#bot.dire
 procs = []
 
 # print(name)
-proc = Process(target=rightEncoderPub)
-procs.append(proc)
-proc.start()
-
-proc = Process(target=LeftEncoderPub)
-procs.append(proc)
-proc.start()
+#proc = Process(target=rightEncoderPub)
+#procs.append(proc)
+#proc.start()
+#
+#proc = Process(target=LeftEncoderPub)
+#procs.append(proc)
+#proc.start()
 
 
 
@@ -114,18 +115,31 @@ class KeyboardHandler:
         print(vl, vr)
 
         self.bot.drive_direct(vr, vl)
-bot.drive_direct(100, -100)
-time.sleep(2)
-bot.drive_stop()
+
 keyboardHandler = KeyboardHandler(bot)
 
-listen_keyboard(
-    on_press=keyboardHandler.press,
-    on_release=keyboardHandler.release,
-    until="space",
-)
+#listen_keyboard(
+#    on_press=keyboardHandler.press,
+#    on_release=keyboardHandler.release,
+#    until="space",
+#)
 
-bot.drive_stop()
+while True:
+    bot.drive_direct(100, -100)
+    time.sleep(.5)
+    bot.drive_stop()
+    
+    time.sleep(.5)
+    print(bot.get_sensors().encoder_counts_right )
+    time.sleep(.5)
+
+    bot.drive_direct(-100,100)
+    time.sleep(.5)
+    bot.drive_stop()
+
+    time.sleep(.5)
+    print(bot.get_sensors().encoder_counts_right )
+    time.sleep(.5)
 
 # complete the processes
 for proc in procs:
