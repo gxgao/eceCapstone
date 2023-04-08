@@ -1,12 +1,12 @@
-obstacle_range: 0.5
-raytrace_range: 0.5
+obstacle_range: 1.0
+raytrace_range: 1.0
 footprint: [[-0.14, -0.14], [-0.14, 0.14], [0.14, 0.14], [0.14, -0.14]]
 map_topic: /map
 subscribe_to_updates: true
 global_frame: odom
 robot_base_frame: base_link
-update_frequency: 30.0
-publish_frequency: 30.0
+update_frequency: 10.0
+publish_frequency: 10.0
 rolling_window: false
 
 plugins:

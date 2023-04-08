@@ -122,11 +122,11 @@ int main(int argc, char **argv) {
   ros::Rate loop_rate(10);
   int cnt = 0;  
   while (ros::ok()) {
-	if (cnt == 500) {
+	if (cnt == 300) {
 
 		handle_pose_init_norviz(-0.05025903135538101, -0.035147152841091156, 0.1114344522356987); 	
 	}	
-	if (cnt == 600) {
+	if (cnt == 400) {
 
 		handle_pose_goal_norviz(-0.9060239195823669, 0.55168217420578, 3.017787456512451); 	
 	}

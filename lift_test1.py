@@ -24,7 +24,7 @@ import RPi.GPIO as GPIO
 import time
 
 # Pin Definitions
-PUL_PIN = 33
+PUL_PIN = 32
 DIR_PIN = 31
 ENA_PIN = 29
 
@@ -37,7 +37,7 @@ def main():
     GPIO.setup(DIR_PIN, GPIO.OUT, initial=GPIO.LOW)
     GPIO.setup(ENA_PIN, GPIO.OUT, initial=GPIO.HIGH)
     
-    p = GPIO.PWM(PUL_PIN, 1000)
+    # p = GPIO.PWM(PUL_PIN, 1000)
 
     PERIOD = 0.001
     print("Starting demo, press CTRL+C to exit\n")
@@ -51,14 +51,14 @@ def main():
             GPIO.output(DIR_PIN, GPIO.LOW)
             GPIO.output(ENA_PIN, GPIO.LOW)
             
-            p.start(50)
-            time.sleep(2.4)
-            p.stop()
-            # for i in range(2400):
-                # GPIO.output(PUL_PIN, GPIO.HIGH)
-                # time.sleep(PERIOD)
-                # GPIO.output(PUL_PIN, GPIO.LOW)
-                # time.sleep(PERIOD)
+            # p.start(50)
+            # time.sleep(2.4)
+            # p.stop()
+            for i in range(2400):
+                GPIO.output(PUL_PIN, GPIO.HIGH)
+                time.sleep(PERIOD)
+                GPIO.output(PUL_PIN, GPIO.LOW)
+                time.sleep(PERIOD)
 
             
             GPIO.output(ENA_PIN, GPIO.HIGH)
@@ -66,14 +66,14 @@ def main():
             GPIO.output(DIR_PIN, GPIO.HIGH)
             GPIO.output(ENA_PIN, GPIO.LOW)
             
-            p.start(50)
-            time.sleep(2.4)
-            p.stop()
-            # for j in range(2400):
-                # GPIO.output(PUL_PIN, GPIO.HIGH)
-                # time.sleep(PERIOD)
-                # GPIO.output(PUL_PIN, GPIO.LOW)
-                # time.sleep(PERIOD)
+            # p.start(50)
+            # time.sleep(2.4)
+            # p.stop()
+            for j in range(2400):
+                GPIO.output(PUL_PIN, GPIO.HIGH)
+                time.sleep(PERIOD)
+                GPIO.output(PUL_PIN, GPIO.LOW)
+                time.sleep(PERIOD)
 
             GPIO.output(ENA_PIN, GPIO.HIGH)
             GPIO.output(DIR_PIN, GPIO.LOW)
