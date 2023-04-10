@@ -1,7 +1,6 @@
-footprint: [[-0.16, -0.16], [-0.16, 0.16], [0.16, 0.16], [0.16, -0.16]]
-robot_radius: 0.30
+robot_radius: 0.17
 
-transform_tolerance: 0.4
+transform_tolerance: 0.2
 map_type: costmap
 
 obstacle_layer:
