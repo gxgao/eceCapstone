@@ -1,12 +1,13 @@
 <launch>
+<param name="/use_sim_time" value="false"/>
 
   <!-- Transformation Configuration ... Setting Up the Relationships Between Coordinate Frames --> 
-  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0 0 0 0 0 0 base_link laser 10" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.04191 0.01905 0.19812 3.14159 0 0 base_link laser 10" />
  
-  <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 30" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 10" />
   <!-- odom to base_footprint transform will be provided by the robot_pose_ekf node -->
   <!-- map to odom will be provided by the AMCL -->
-  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 30" />
+  <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 30" /> -->
 
 
  <!-- Lidar Data Publisher Using RPLIDAR from Slamtec -->
@@ -42,10 +43,11 @@
   <!-- Subscribe: /move_base_simple/goal -->
   <!-- Publish: /cmd_vel -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <!-- <param name="controller_frequency" value="0.5" /> -->
     <rosparam file="$(find navstack_pub)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find navstack_pub)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find navstack_pub)/param/local_costmap_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find navstack_pub)/param/global_costmap_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find navstack_pub)/param/local_costmap_params.yaml" command="load"/>
+    <rosparam file="$(find navstack_pub)/param/global_costmap_params.yaml" command="load"/>
     <rosparam file="$(find navstack_pub)/param/base_local_planner_params.yaml" command="load" />
   </node>
 
@@ -59,8 +61,16 @@
   <!-- Add AMCL example for differential drive robots for Localization -->
   <!-- Subscribe: /scan, /tf, /initialpose, /map -->
   <!-- Publish: /amcl_pose, /particlecloud, /tf -->
-  <include file="$(find amcl)/examples/amcl_diff.launch"/>
+<node pkg="amcl" type="amcl" name="amcl" output="screen"> 
+  <!-- Publish scans from best pose at a max of 10 Hz -->
+  <param name="odom_model_type" value="diff"/> 
+  <param name="odom_alpha1" value="0.2" />
+  <param name="odom_alpha2" value="0.2" />
+  <param name="odom_alpha3" value="0.2" />
+  <param name="odom_alpha4" value="0.2" />
+  </node> 
 
+  <!-- <include file="$(find gmcl)/examples/gmcl_diff.launch" /> -->
 
 
 </launch>
