@@ -33,6 +33,9 @@ class BinTracker:
     def __init__(self):
         self.currBin = None 
 
+    def getFreeBin(self):
+        
+
     # takes list of ids and queries database and returns list of bins 
     def checkIds(self, markerIds):
         dbBins = [] 

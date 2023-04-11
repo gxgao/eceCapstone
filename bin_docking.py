@@ -48,7 +48,7 @@ bot = Create2("/dev/ttyUSB1")
 bot.start()
 bot.safe()
 bot.full()
-<<<<<<< HEAD
+
 bot.drive_direct(100, 100)
 time.sleep(2)
 bot.drive_stop()

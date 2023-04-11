@@ -6,10 +6,6 @@ from imutils.video import VideoStream
 import time
 from cameraCalibration import loadCoefficients
 import binID
-<<<<<<< HEAD
-
-=======
->>>>>>> 672a80e01eff6c14d0a2517919aec056c3a84ca9
 
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
@@ -42,12 +38,32 @@ parameters = cv2.aruco.DetectorParameters_create()
 
 # detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
-vs = VideoStream(src=0).start()
 time.sleep(2.0)
+
+vs = VideoStream(src=0).start()
 
 cMtx, cDist = loadCoefficients()
 
-binTracker = binID.BinTracker() 
+
+# returns distance vector if (translation_vector, bin) was found else None 
+# translation_vector = [x, y, z]
+def fetch_bin_distance_vec(): 
+	frame = vs.read()
+	frame = imutils.resize(frame, width=1000)
+	# detect ArUco markers in the input frame
+    # markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame)
+	markerCorners, markerIds, rejected = cv2.aruco.detectMarkers(
+	    frame, dictionary, parameters=parameters)
+
+	if markerIds is not None and len(markerIds) != 0:
+		# print(markerCorners)
+		markerSizeInCM = 3.1
+		rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)
+		return (tvec[0][0], markerIds)
+
+	return None 
+
+
 
 # loop over the frames from the video stream
 while 1:
@@ -61,8 +77,6 @@ while 1:
 	    frame, dictionary, parameters=parameters)
 
 	if markerIds is not None and len(markerIds) != 0:
-		bins = binTracker.checkIds(markerIds)
-		print("found bins: ", bins) 
 
 		# print(markerCorners)
 		markerSizeInCM = 3.1
