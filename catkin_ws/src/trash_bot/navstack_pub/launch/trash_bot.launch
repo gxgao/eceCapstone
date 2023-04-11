@@ -52,7 +52,7 @@
   </node>
 
 <!-- Map File -->
-  <arg name="map_file" default="$(find navigation_data_pub)/maps/a101_hector.yaml"/> 
+  <arg name="map_file" default="$(find navigation_data_pub)/maps/a101_gmap.yaml"/> 
 	
   <!-- Map Server -->
   <!-- Publish: /map, /map_metadata -->
