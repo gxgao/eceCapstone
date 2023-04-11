@@ -48,7 +48,7 @@ def queryAr(arId):
 def insertRow(arucoId, binId, x, y, toTakeOut = False, missing = False):
     cursor.execute(
         f""" 
-        Insert into Bins (ARid, bin, x, y, TakeOut)
+        Insert into Bins (ARid, bin, x, y, TakeOut, Missing)
         Values({arucoId}, {binId}, {x}, {y}, {toTakeOut}, {missing})
         """
     )
@@ -82,6 +82,7 @@ if __name__ == "__main__":
     setUp() 
     insertRow(0, 0, 0, 0, False, False)
     insertRow(1, 1, 1, 1, True, False)
+    # fetchall returns tuple of columns 
     print(queryBin(0))
     saveDbChanges() 
     connection.close() 
