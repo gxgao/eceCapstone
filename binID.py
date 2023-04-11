@@ -8,22 +8,21 @@ class BIN_DIR(Enum):
     LEFT = 3 
 
 
-ENUMDIR = Color = [BIN_DIR.FRONT, BIN_DIR.BACK, BIN_DIR.RIGHT, BIN_DIR.LEFT]
 
 class Bin:
-    def __init__(self, arucoId, binId, x, y, takeOut): 
+    def __init__(self, arucoId, binId, x, y, takeOut, missing): 
         self.arucoId = arucoId 
         self.binId = binId 
         self.x = x 
         self.y = y 
         self.takeOut = takeOut 
-        self.dir = ENUMDIR[arucoId % 4] 
+        self.missing = missing
 
     def getProperties(self):
         return self.arucoId, self.binId, self.x, self.y, self.takeOut, self.dir  
     
-    def getDir(self):
-        return self.dir
+    def getXY(self):
+        return self.x, self.y 
 
     def __repr__(self):
         return f"Bin: {self.binId}, x: {self.x}, y: {self.y}, takeOut? : {self.takeOut}"
@@ -34,7 +33,12 @@ class BinTracker:
         self.currBin = None 
 
     def getFreeBin(self):
-        
+        emptyBins = dbInterface.getFreeBins()
+        if (len(emptyBins) == 0):
+            return None 
+        aruco, binId, x, y, takeOut, missing = emptyBins[0] 
+        return Bin(aruco, binId, x, y, takeOut, missing)
+
 
     # takes list of ids and queries database and returns list of bins 
     def checkIds(self, markerIds):
@@ -42,7 +46,7 @@ class BinTracker:
         for mId in markerIds: 
             dbBins += dbInterface.queryBin(mId[0])
         bins = [] 
-        for aruco, binId, x, y, takeOut in dbBins: 
+        for aruco, binId, x, y, takeOut, _ in dbBins: 
 
             bins.append(Bin(aruco, binId, x, y, takeOut))
 

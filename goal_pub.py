@@ -20,7 +20,7 @@ class ROBOT_STATE(Enum):
     # state for idle, get new goal 
     IDLE = 0 
     # state for in middle of traveling to goal 
-    TRAVELING = 1
+    FETCHING = 1
 
     BRINGING_BACK = 2
     
@@ -41,7 +41,7 @@ class Robot:
         self.binTracker =  binID.BinTracker() 
 
     
-    def send_goal(self, x, y, yaw): 
+    def sendGoal(self, x, y, yaw): 
         rpyPose = PoseStamped() 
         rpyPose.header.frame_id = "map"
         rpyPose.header.stamp = rospy.get_rostime()
@@ -58,7 +58,7 @@ class Robot:
         goal_2d_pub.publish(rpyPose)
         move_base_goal_pub.publish(rpyPose)
 
-    def cancel_goal(self):
+    def cancelGoal(self):
         cancel_msg = GoalID()
         cancel_pub.publish(cancel_msg)
 
@@ -94,4 +94,10 @@ if __name__ == "__main__":
         # do some automatic stuff 
             if rbt.state == ROBOT_STATE.IDLE: 
                 # find next empty bin and traverse to it 
-                binId = 
+                #  [(0, 0, 0.0, 0.0, 0, 0)]      
+                freeBin = rbt.binTracker.getFreeBin() 
+                x, y = freeBin.getXY() 
+                rbt.state = ROBOT_STATE.FETCHING 
+                rbt.sendGoal(x, y, 0)
+
+

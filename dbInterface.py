@@ -27,7 +27,7 @@ def setUp():
     cursor.execute("CREATE TABLE if not exists Bins(ARid INTEGER primary key, bin INTEGER, x REAL, y REAL, TakeOut BOOL, Missing BOOL)")
 
 
-def getFreeBin():
+def getFreeBins():
     return cursor.execute(f"""
                 SELECT * from Bins where TakeOut = true AND Missing = false 
                    """).fetchall()
