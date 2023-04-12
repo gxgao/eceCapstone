@@ -64,22 +64,22 @@ def fetch_bin_distance_vec():
 	return None 
 
 
+def testf():
+	# loop over the frames from the video stream
+	while 1:
+		# grab the frame from the threaded video stream and resize it
+		# to have a maximum width of 1000 pixels
+		frame = vs.read()
+		frame = imutils.resize(frame, width=1000)
+		# detect ArUco markers in the input frame
+		# markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame)
+		markerCorners, markerIds, rejected = cv2.aruco.detectMarkers(
+			frame, dictionary, parameters=parameters)
 
-# loop over the frames from the video stream
-while 1:
-	# grab the frame from the threaded video stream and resize it
-	# to have a maximum width of 1000 pixels
-	frame = vs.read()
-	frame = imutils.resize(frame, width=1000)
-	# detect ArUco markers in the input frame
-    # markerCorners, markerIds, rejectedCandidates = detector.detectMarkers(frame)
-	markerCorners, markerIds, rejected = cv2.aruco.detectMarkers(
-	    frame, dictionary, parameters=parameters)
+		if markerIds is not None and len(markerIds) != 0:
 
-	if markerIds is not None and len(markerIds) != 0:
+			# print(markerCorners)
+			markerSizeInCM = 3.1
+			rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)
 			
-		# print(markerCorners)
-		markerSizeInCM = 3.1
-		rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)
-        
 

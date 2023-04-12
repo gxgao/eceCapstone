@@ -90,6 +90,7 @@ if __name__ == "__main__":
     rospy.Subscriber("/move_base/status", GoalStatusArray, rbt.goalReached)
 
     cnt = 0
+    
     while not rospy.is_shutdown(): 
         if cnt % 10 == 0:
             print(rbt.state) 
