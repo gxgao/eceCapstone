@@ -90,10 +90,10 @@ if __name__ == "__main__":
     rospy.Subscriber("/move_base/status", GoalStatusArray, rbt.goalReached)
 
     cnt = 0
-    
+    print("Starting runs!")
     while not rospy.is_shutdown(): 
         if cnt % 10 == 0:
-            print(rbt.state) 
+            print(f"state:  {rbt.state}") 
         
         if (cmd_line is not None and cmd_line == "t"):
             action = input("x y yaw").split() 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                             rbt.cancelGoal() 
                             rbt.state = ROBOT_STATE.DOCKING 
                 # goal reach will be done throught hte callback from the subscriber 
-                cnt += 1
+            cnt += 1
 
         
 
