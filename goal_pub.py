@@ -91,8 +91,9 @@ if __name__ == "__main__":
 
     cnt = 0
     while not rospy.is_shutdown(): 
+        if cnt % 10 == 0:
+            print(rbt.state) 
         
-
         if (cmd_line is not None and cmd_line == "t"):
             action = input("x y yaw").split() 
             if (len(action) == 1):
@@ -118,7 +119,7 @@ if __name__ == "__main__":
                     distAndMarkers = va.fetch_bin_distance_vec()
                     if distAndMarkers is not None:
                         dist, marker = distAndMarkers 
-                        if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.7: 
+                        if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.8: 
                             # do some movement towards it 
                             rbt.cancelGoal() 
                             rbt.state = ROBOT_STATE.DOCKING 
