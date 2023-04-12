@@ -80,8 +80,8 @@ def saveDbChanges():
 
 if __name__ == "__main__":
     setUp() 
-    insertRow(0, 0, 0, 0, False, False)
-    insertRow(1, 1, 1, 1, True, False)
+    insertRow(4.84, -.038, 0, 0, True, False)
+    insertRow(1, 1, 1, 1, False, False)
     # fetchall returns tuple of columns 
     print(queryBin(0))
     saveDbChanges() 
