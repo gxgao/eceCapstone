@@ -77,7 +77,7 @@ while 1:
 	    frame, dictionary, parameters=parameters)
 
 	if markerIds is not None and len(markerIds) != 0:
-
+			
 		# print(markerCorners)
 		markerSizeInCM = 3.1
 		rvec , tvec, _ = cv2.aruco.estimatePoseSingleMarkers(markerCorners, markerSizeInCM, cMtx, cDist)

@@ -4,10 +4,15 @@
 import rospy
 from geometry_msgs.msg import PoseStamped 
 from actionlib_msgs.msg import GoalID
+from actionlib_msgs.msg import GoalStatusArray
 from enum import Enum 
 import video_aruco as va 
 import sys
 import binID
+
+
+
+X,Y,Z = 0, 1, 2 
 
 
 
@@ -40,6 +45,7 @@ class Robot:
         self.state = ROBOT_STATE.IDLE   
         self.binTracker =  binID.BinTracker() 
 
+
     
     def sendGoal(self, x, y, yaw): 
         rpyPose = PoseStamped() 
@@ -67,8 +73,12 @@ class Robot:
         print("found bins: ", bins) 
         bins = self.binTracker.checkIds(markerIds)
         
-    
-
+    def goalReached(self, data):
+        if data[0].text == "Goal Reached":
+            if self.state ==  ROBOT_STATE.FETCHING:
+                self.state = ROBOT_STATE.DOCKING 
+            elif self.state == ROBOT_STATE.BRINGING_BACK:
+                self.state = ROBOT_STATE.DEDOCKING 
 
 
 if __name__ == "__main__":
@@ -77,7 +87,9 @@ if __name__ == "__main__":
     rospy.init_node('goal_publisher')
     rate = rospy.Rate(10)
     rbt = Robot()
+    rospy.Subscriber("/move_base/status", GoalStatusArray, rbt.goalReached)
 
+    cnt = 0
     while not rospy.is_shutdown(): 
         
 
@@ -89,15 +101,33 @@ if __name__ == "__main__":
                 x, y, yaw = action
                 rbt.send_goal(float(x), float(y), float(yaw)) 
 
-            rate.sleep() 
         else:  
         # do some automatic stuff 
             if rbt.state == ROBOT_STATE.IDLE: 
+                cnt = 0
                 # find next empty bin and traverse to it 
                 #  [(0, 0, 0.0, 0.0, 0, 0)]      
                 freeBin = rbt.binTracker.getFreeBin() 
                 x, y = freeBin.getXY() 
                 rbt.state = ROBOT_STATE.FETCHING 
                 rbt.sendGoal(x, y, 0)
+            
+            if rbt.state == ROBOT_STATE.FETCHING: 
+                # check video frame once every 10 seconds 
+                if cnt % 10 == 0: 
+                    distAndMarkers = va.fetch_bin_distance_vec()
+                    if distAndMarkers is not None:
+                        dist, marker = distAndMarkers 
+                        if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.7: 
+                            # do some movement towards it 
+                            rbt.cancelGoal() 
+                            rbt.state = ROBOT_STATE.DOCKING 
+                # goal reach will be done throught hte callback from the subscriber 
+                cnt += 1
+
+        
+
+        rate.sleep() 
+
 
 

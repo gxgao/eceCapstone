@@ -31,13 +31,15 @@ class BinTracker:
 
     def __init__(self):
         self.currBin = None 
+        self.binToGet = None 
 
     def getFreeBin(self):
         emptyBins = dbInterface.getFreeBins()
         if (len(emptyBins) == 0):
             return None 
         aruco, binId, x, y, takeOut, missing = emptyBins[0] 
-        return Bin(aruco, binId, x, y, takeOut, missing)
+        self.binToGet = Bin(aruco, binId, x, y, takeOut, missing)
+        return self.binToGet 
 
 
     # takes list of ids and queries database and returns list of bins 
