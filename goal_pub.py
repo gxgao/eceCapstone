@@ -5,6 +5,7 @@ import rospy
 from geometry_msgs.msg import PoseStamped 
 from actionlib_msgs.msg import GoalID
 from actionlib_msgs.msg import GoalStatusArray
+from tf.transformations import quaternion_from_euler
 from enum import Enum 
 import video_aruco as va 
 import sys
@@ -48,6 +49,7 @@ class Robot:
 
     
     def sendGoal(self, x, y, yaw): 
+        print("Goal sent")
         rpyPose = PoseStamped() 
         rpyPose.header.frame_id = "map"
         rpyPose.header.stamp = rospy.get_rostime()
@@ -56,11 +58,12 @@ class Robot:
         rpyPose.pose.position.z = 0
         # double roll, pitch, yaw;
         # m.getRPY(roll, pitch, yaw);
-        rpyPose.pose.orientation.x = 0
-        rpyPose.pose.orientation.y = 0
+        qt = quaternion_from_euler(0, 0, yaw)
+        rpyPose.pose.orientation.x = qt[0]
+        rpyPose.pose.orientation.y = qt[1]
         # yaw in radis
-        rpyPose.pose.orientation.z = yaw
-        rpyPose.pose.orientation.w = 0
+        rpyPose.pose.orientation.z = qt[2]
+        rpyPose.pose.orientation.w = qt[3]
         goal_2d_pub.publish(rpyPose)
         move_base_goal_pub.publish(rpyPose)
 
@@ -74,7 +77,7 @@ class Robot:
         bins = self.binTracker.checkIds(markerIds)
         
     def goalReached(self, data):
-        if data[0].text == "Goal Reached":
+        if len(data.status_list) > 0 and data.status_list[0]  == 3:
             if self.state ==  ROBOT_STATE.FETCHING:
                 self.state = ROBOT_STATE.DOCKING 
             elif self.state == ROBOT_STATE.BRINGING_BACK:
@@ -82,7 +85,7 @@ class Robot:
 
 
 if __name__ == "__main__":
-    cmd_line = sys.argv[1]  
+    cmd_line = sys.argv[1] if len(sys.argv) > 1 else None  
 
     rospy.init_node('goal_publisher')
     rate = rospy.Rate(10)
@@ -98,10 +101,10 @@ if __name__ == "__main__":
         if (cmd_line is not None and cmd_line == "t"):
             action = input("x y yaw").split() 
             if (len(action) == 1):
-                rbt.cancel_goal() 
+                rbt.cancelGoal() 
             else:
                 x, y, yaw = action
-                rbt.send_goal(float(x), float(y), float(yaw)) 
+                rbt.sendGoal(float(x), float(y), float(yaw)) 
 
         else:  
         # do some automatic stuff 
@@ -110,9 +113,10 @@ if __name__ == "__main__":
                 # find next empty bin and traverse to it 
                 #  [(0, 0, 0.0, 0.0, 0, 0)]      
                 freeBin = rbt.binTracker.getFreeBin() 
-                x, y = freeBin.getXY() 
+                x, y = freeBin.getXY()
+                print(f"free bin {x}, {y}")
                 rbt.state = ROBOT_STATE.FETCHING 
-                rbt.sendGoal(x, y, 0)
+                rbt.sendGoal(float(x), float(y), float(0.0))
             
             if rbt.state == ROBOT_STATE.FETCHING: 
                 # check video frame once every 10 seconds 
@@ -122,13 +126,13 @@ if __name__ == "__main__":
                         dist, marker = distAndMarkers 
                         if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.8: 
                             # do some movement towards it 
+                            print("Cancel Goal")
                             rbt.cancelGoal() 
                             rbt.state = ROBOT_STATE.DOCKING 
                 # goal reach will be done throught hte callback from the subscriber 
             cnt += 1
 
         
-
         rate.sleep() 
 
 
