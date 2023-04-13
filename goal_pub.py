@@ -105,7 +105,6 @@ if __name__ == "__main__":
             else:
                 x, y, yaw = action
                 rbt.sendGoal(float(x), float(y), float(yaw)) 
-
         else:  
         # do some automatic stuff 
             if rbt.state == ROBOT_STATE.IDLE: 
@@ -118,17 +117,17 @@ if __name__ == "__main__":
                 rbt.state = ROBOT_STATE.FETCHING 
                 rbt.sendGoal(float(x), float(y), float(0.0))
             
-            if rbt.state == ROBOT_STATE.FETCHING: 
-                # check video frame once every 10 seconds 
-                if cnt % 10 == 0: 
-                    distAndMarkers = va.fetch_bin_distance_vec()
-                    if distAndMarkers is not None:
-                        dist, marker = distAndMarkers 
-                        if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.8: 
-                            # do some movement towards it 
-                            print("Cancel Goal")
-                            rbt.cancelGoal() 
-                            rbt.state = ROBOT_STATE.DOCKING 
+            # if rbt.state == ROBOT_STATE.FETCHING: 
+            #     # check video frame once every 10 seconds 
+            #     if cnt % 10 == 0: 
+            #         distAndMarkers = va.fetch_bin_distance_vec()
+            #         if distAndMarkers is not None:
+            #             dist, marker = distAndMarkers 
+            #             if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.8: 
+            #                 # do some movement towards it 
+            #                 print("Cancel Goal")
+            #                 rbt.cancelGoal() 
+            #                 rbt.state = ROBOT_STATE.DOCKING 
                 # goal reach will be done throught hte callback from the subscriber 
             cnt += 1
 
