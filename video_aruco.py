@@ -72,5 +72,4 @@ def testf():
 		print(fetch_bin_distance_vec()) 
 			
 
-testf() 
 

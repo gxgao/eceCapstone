@@ -158,10 +158,11 @@ if __name__ == "__main__":
                  # check video frame once every 10 seconds 
                  if cnt % 10 == 0: 
                      distAndMarkers = va.fetch_bin_distance_vec()
+                     print(distAndMarkers)
                      if distAndMarkers is not None:
                          dist, marker = distAndMarkers 
                          print("saw marker")
-                         if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.8: 
+                         if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 100: 
                              # do some movement towards it 
                              print("Cancel Goal")
                              rbt.client.cancel_goal() 
