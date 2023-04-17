@@ -3,6 +3,7 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped 
+from geometry_msgs.msg import Twist
 from actionlib_msgs.msg import GoalID
 from actionlib_msgs.msg import GoalStatusArray
 from actionlib_msgs.msg import GoalStatus
@@ -17,13 +18,14 @@ import actionlib
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
 X,Y,Z = 0, 1, 2 
-
+# central axis of robot
+FRONT_CAMERA_CENTRAL = -9
 
 
 cancel_pub = rospy.Publisher("/move_base/cancel", GoalID, queue_size=1)
 goal_2d_pub = rospy.Publisher('goal_2d', PoseStamped, queue_size=0)
 move_base_goal_pub = rospy.Publisher(r'/move_base_simple/goal', PoseStamped, queue_size=0)
-
+drive_bot_pub = rospy.Publisher(r'/cmd_vel', Twist, queue_size=0)
 
 class ROBOT_STATE(Enum):
     # state for idle, get new goal 
@@ -51,6 +53,8 @@ class Robot:
 
         self.client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
         self.client.wait_for_server()
+        
+        self.velCmd = Twist()
     
     def sendGoal(self, x, y, yaw): 
         # rpyPose = PoseStamped() 
@@ -118,7 +122,12 @@ class Robot:
 
         self.client.send_goal(goal)
 
+    def drive_bot(self, x, y, angularZ):
+        self.velCmd.linear.x = x 
+        self.velCmd.linear.y = y 
+        self.velCmd.angular.z = angularZ 
 
+        drive_bot_pub.pub(self.velCmd) 
 
 if __name__ == "__main__":
     cmd_line = sys.argv[1] if len(sys.argv) > 1 else None  
@@ -128,6 +137,7 @@ if __name__ == "__main__":
     rbt = Robot()
     rospy.Subscriber("/move_base/status", GoalStatusArray, rbt.goalReached)
 
+
     cnt = 0
     print("Starting runs!")
     while not rospy.is_shutdown(): 
@@ -135,13 +145,19 @@ if __name__ == "__main__":
             print(f"state:  {rbt.state}") 
         
         if (cmd_line is not None and cmd_line == "t"):
-            action = input("x y yaw").split() 
-            if (len(action) <= 1):
-                rbt.client.cancel_goal() 
-            else:
-                x, y, yaw = action
-                # rbt.sendGoal(float(x), float(y), float(yaw)) 
-                rbt.movebase_client(x, y)
+            cmd = input("goal (g) drive (d)?") 
+            if cmd == "g":
+                action = input("x y yaw").split() 
+                if (len(action) <= 1):
+                    rbt.client.cancel_goal() 
+                else:
+                    x, y, yaw = action
+                    # rbt.sendGoal(float(x), float(y), float(yaw)) 
+                    rbt.movebase_client(x, y)
+            elif cmd == "d":
+                action = input("x y angularZ").split() 
+                x, y, z = action 
+                rbt.drive_bot(x, y, z)
         else:  
         # do some automatic stuff 
             if rbt.state == ROBOT_STATE.IDLE: 
@@ -161,14 +177,38 @@ if __name__ == "__main__":
                      if distAndMarkers is not None:
                          dist, marker = distAndMarkers 
                          print("saw marker")
-                         if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 0.8: 
+                         # if within 110 cm we will swap our state into docking mode 
+                         if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 110: 
                              # do some movement towards it 
                              print("Cancel Goal")
                              rbt.client.cancel_goal() 
                              rbt.state = ROBOT_STATE.DOCKING 
-                             # goal reach will be done throught hte callback from the subscriber 
                  if rbt.client.get_state() == GoalStatus.SUCCEEDED:
                       rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN
+            if rbt.state == ROBOT_STATE.SEARCHING_FOR_BIN: 
+                distAndMarkers = va.fetch_bin_distance_vec()
+                if distAndMarkers is not None:
+                    dist, marker = distAndMarkers
+                    x, y, z = dist
+                    # rotate 
+                    if x < FRONT_CAMERA_CENTRAL + 20: 
+
+                        pass 
+                    # too left turn right 
+                    elif x >  FRONT_CAMERA_CENTRAL - 20: 
+
+                        pass 
+                    elif z >= 25:
+                        # go forward
+                        # construc
+                        pass 
+                    else:
+                        rbt.state = ROBOT_STATE.DOCKING
+                else: 
+                    # rotate in place until you find it, if rotated 2x we will go back to goal movement 
+                    pass 
+
+
             cnt += 1
 
         
