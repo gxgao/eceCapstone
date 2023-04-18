@@ -158,6 +158,7 @@ class Robot:
 
         while(current_angle < relative_angle):
             drive_bot_pub.publish(vel_msg)
+            print("pubed")
             t1 = rospy.Time.now().to_sec()
             current_angle = angular_speed*(t1-t0)
 
@@ -198,7 +199,7 @@ if __name__ == "__main__":
                 rbt.drive_bot(x, y, z)
             elif cmd == "r":
                 angle = input("angle")
-                rbt.rotate(0.2, float(angle))
+                rbt.rotate(30, float(angle))
         else:  
         # do some automatic stuff 
             if rbt.state == ROBOT_STATE.IDLE: 

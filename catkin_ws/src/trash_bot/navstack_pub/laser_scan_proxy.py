@@ -17,9 +17,9 @@ def callback(msg):
     new_msg.scan_time = msg.scan_time
     new_msg.range_min = msg.range_min
     new_msg.range_max = msg.range_max
-    print(len(msg.ranges)) 
-    new_msg.ranges = msg.ranges[270:450]
-
+    new_msg.ranges = msg.ranges[861:] + msg.ranges[:287] 
+    new_msg.intensities = msg.intensities[861:] + msg.intensities[:287] 
+    new_msg.header.frame_id = "laser_180"
     # Publish the modified laserscan message on the new topic
     pub.publish(new_msg)
 

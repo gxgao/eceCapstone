@@ -4,6 +4,8 @@
   <!-- Transformation Configuration ... Setting Up the Relationships Between Coordinate Frames --> 
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.04191 0.01905 0.19812 3.14159 0 0 base_link laser 10" />
  
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser_180" args="0.04191 0.01905 0.19812 0 0 0 base_link laser_180 10" />
+ 
   <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 10" />
   <!-- odom to base_footprint transform will be provided by the robot_pose_ekf node -->
   <!-- map to odom will be provided by the AMCL -->
@@ -20,7 +22,7 @@
     <param name="inverted"            type="bool"   value="false"/>
     <param name="angle_compensate"    type="bool"   value="true"/>
   </node>  
-
+  <node pkg="navstack_pub" name="laser_scan_proxy" type="laser_scan_proxy.py" output="screen" />
 <!--
  <node pkg="laser_scan_matcher" type="laser_scan_matcher_node"
     name="laser_scan_matcher_node" output="screen">
@@ -64,6 +66,7 @@
 <node pkg="amcl" type="amcl" name="amcl" output="screen"> 
   <!-- Publish scans from best pose at a max of 10 Hz -->
   <param name="odom_model_type" value="diff"/> 
+  <param name="scan_topic" value="scan_180"/>
   <param name="odom_alpha1" value="0.2" />
   <param name="odom_alpha2" value="0.2" />
   <param name="odom_alpha3" value="0.2" />
