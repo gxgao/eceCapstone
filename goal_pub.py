@@ -123,12 +123,28 @@ class Robot:
 
         self.client.send_goal(goal)
 
-    def drive_bot(self, x, y, angularZ):
+    def drive_bot(self, x, angularZ, rate):
         x, y, angularZ = float(x), float(y), float(angularZ)
         self.velCmd.linear.x = x 
         self.velCmd.linear.y = y 
         self.velCmd.angular.z = angularZ 
 
+        # Calculate the distance traveled
+        distance = 0.0
+        rotation = 0.0 
+        while distance < abs(x) and rotation < abs(z):
+            # Publish the velocity message
+            drive_bot_pub.publish(self.velCmd)
+
+            # Calculate the distance traveled
+            distance += abs(self.velCmd.linear.x) / rate.sleep_dur.to_sec()
+            rotation += abs(self.velCmd.angular.z) / rate.sleep_dur.to_sec()
+            # Sleep to maintain the publish rate
+            rate.sleep()
+
+    # Stop the robot
+        self.velCmd.linear.x = 0.0
+        self.velCmd.angular.z = 0.0
         drive_bot_pub.publish(self.velCmd) 
 
     def rotate(self, speed, angle, clockwise = True):
@@ -194,9 +210,9 @@ if __name__ == "__main__":
                     # rbt.sendGoal(float(x), float(y), float(yaw)) 
                     rbt.movebase_client(x, y)
             elif cmd == "d":
-                action = input("x y angularZ").split() 
-                x, y, z = action 
-                rbt.drive_bot(x, y, z)
+                action = input("x angularZ").split() 
+                x, z = action 
+                rbt.drive_bot(x, z, rate)
             elif cmd == "r":
                 angle = input("angle")
                 rbt.rotate(30, float(angle))
