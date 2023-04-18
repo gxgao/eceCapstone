@@ -123,11 +123,12 @@ class Robot:
         self.client.send_goal(goal)
 
     def drive_bot(self, x, y, angularZ):
+        x, y, angularZ = float(x), float(y), float(angularZ)
         self.velCmd.linear.x = x 
         self.velCmd.linear.y = y 
         self.velCmd.angular.z = angularZ 
 
-        drive_bot_pub.pub(self.velCmd) 
+        drive_bot_pub.publish(self.velCmd) 
 
 if __name__ == "__main__":
     cmd_line = sys.argv[1] if len(sys.argv) > 1 else None  
