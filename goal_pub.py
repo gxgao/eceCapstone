@@ -20,6 +20,7 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 X,Y,Z = 0, 1, 2 
 # central axis of robot
 FRONT_CAMERA_CENTRAL = -9
+PI = 3.1415
 
 
 cancel_pub = rospy.Publisher("/move_base/cancel", GoalID, queue_size=1)
@@ -130,6 +131,42 @@ class Robot:
 
         drive_bot_pub.publish(self.velCmd) 
 
+    def rotate(self, speed, angle, clockwise = True):
+        # Create the Twist variable
+        vel_msg = Twist()
+
+        # Converting from angles to radians
+        angular_speed = speed*2*PI/360
+        relative_angle = angle*2*PI/360
+
+        # We won't use linear components
+        vel_msg.linear.x=0
+        vel_msg.linear.y=0
+        vel_msg.linear.z=0
+        vel_msg.angular.x = 0
+        vel_msg.angular.y = 0
+
+        # Checking if our movement is CW or CCW
+        if clockwise:
+            vel_msg.angular.z = -abs(angular_speed)
+        else:
+            vel_msg.angular.z = abs(angular_speed)
+
+        # Setting the current time for distance calculus
+        t0 = rospy.Time.now().to_sec()
+        current_angle = 0
+
+        while(current_angle < relative_angle):
+            drive_bot_pub.publish(vel_msg)
+            t1 = rospy.Time.now().to_sec()
+            current_angle = angular_speed*(t1-t0)
+
+        # Forcing our robot to stop
+        vel_msg.angular.z = 0
+        drive_bot_pub.publish(vel_msg)
+
+
+
 if __name__ == "__main__":
     cmd_line = sys.argv[1] if len(sys.argv) > 1 else None  
 
@@ -146,7 +183,7 @@ if __name__ == "__main__":
             print(f"state:  {rbt.state}") 
         
         if (cmd_line is not None and cmd_line == "t"):
-            cmd = input("goal (g) drive (d)?") 
+            cmd = input("goal (g) drive (d) rotate (r)?") 
             if cmd == "g":
                 action = input("x y yaw").split() 
                 if (len(action) <= 1):
@@ -159,6 +196,9 @@ if __name__ == "__main__":
                 action = input("x y angularZ").split() 
                 x, y, z = action 
                 rbt.drive_bot(x, y, z)
+            elif cmd == "r":
+                angle = input("angle")
+                rbt.rotate(0.2, float(angle))
         else:  
         # do some automatic stuff 
             if rbt.state == ROBOT_STATE.IDLE: 
@@ -194,22 +234,18 @@ if __name__ == "__main__":
                     x, y, z = dist
                     # rotate 
                     if x < FRONT_CAMERA_CENTRAL + 20: 
-
-                        pass 
+                        rbt.drive_bot(0, 0, -0.3)
                     # too left turn right 
                     elif x >  FRONT_CAMERA_CENTRAL - 20: 
-
-                        pass 
-                    elif z >= 25:
-                        # go forward
-                        # construc
-                        pass 
+                        rbt.drive_bot(0, 0, 0.3)
                     else:
+                        
+                        rbt.drive_bot(0, 0, 3.14) 
                         rbt.state = ROBOT_STATE.DOCKING
                 else: 
                     # rotate in place until you find it, if rotated 2x we will go back to goal movement 
                     pass 
-
+            
 
             cnt += 1
 
