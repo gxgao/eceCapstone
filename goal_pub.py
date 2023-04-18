@@ -214,6 +214,7 @@ if __name__ == "__main__":
                  # check video frame once every 10 seconds 
                  if cnt % 10 == 0: 
                      distAndMarkers = va.fetch_bin_distance_vec()
+                     print(distAndMarkers)
                      if distAndMarkers is not None:
                          dist, marker = distAndMarkers 
                          print("saw marker")
