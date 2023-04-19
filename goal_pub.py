@@ -72,21 +72,6 @@ class Robot:
         self.state = state
 
     def sendGoal(self, x, y, yaw): 
-        # rpyPose = PoseStamped() 
-        # rpyPose.header.frame_id = "map"
-        # rpyPose.header.stamp = rospy.get_rostime()
-        # rpyPose.pose.position.x = x
-        # rpyPose.pose.position.y = y
-        # rpyPose.pose.position.z = 0
-        # # double roll, pitch, yaw;
-        # # m.getRPY(roll, pitch, yaw);
-        # qt = quaternion_from_euler(0, 0, yaw)
-        # rpyPose.pose.orientation.x = qt[0]
-        # rpyPose.pose.orientation.y = qt[1]
-        # # yaw in radis
-        # rpyPose.pose.orientation.z = qt[2]
-        # rpyPose.pose.orientation.w = qt[3]
-
         rpyPose = PoseStamped() 
         rpyPose.header.frame_id = "map"
         rpyPose.header.stamp = rospy.get_rostime()
@@ -164,13 +149,13 @@ class Robot:
         print("i made it past return")
         self.min_dist = min(data.ranges)
 
-        if self.min_dist < 0.3:
+        if self.min_dist < 0.5:
             rbt.drive_bot(0, 0, self.rate)
             print("endin my movin")
             self.end_docking_callback(ROBOT_STATE.DEDOCKING)
         else:
-            print("movin fowad")
-            self.drive_bot(.08, .02, self.rate)
+            print("movin backward")
+            self.drive_bot(-.08, .02, self.rate)
 
     def rotate(self, speed, angle, clockwise = True):
         # Create the Twist variable
