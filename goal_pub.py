@@ -3,6 +3,7 @@
 
 import rospy
 from geometry_msgs.msg import PoseStamped 
+from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from actionlib_msgs.msg import GoalID
 from actionlib_msgs.msg import GoalStatusArray
@@ -54,9 +55,22 @@ class Robot:
 
         self.client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
         self.client.wait_for_server()
+        self.sub = rospy.Subscriber('/scan', LaserScan, self.laser_callback)
         
         self.velCmd = Twist()
+        self.rate = rospy.Rate(10)
+        self.enable_laser_callback = False
     
+    def start_docking_callback(self):
+        self.state = ROBOT_STATE.DOCKING
+        self.enable_laser_callback = True
+    
+    def end_docking_callback(self, state):
+        assert state != ROBOT_STATE.DOCKING
+        # self.sub.unregister()
+        self.enable_laser_callback = False
+        self.state = state
+
     def sendGoal(self, x, y, yaw): 
         # rpyPose = PoseStamped() 
         # rpyPose.header.frame_id = "map"
@@ -142,6 +156,21 @@ class Robot:
         self.velCmd.linear.x = 0.0
         self.velCmd.angular.z = 0.0
         drive_bot_pub.publish(self.velCmd) 
+    
+    def laser_callback(self, data):
+        if not self.enable_laser_callback:
+            print("early return from laser callback not enabled")
+            return
+        print("i made it past return")
+        self.min_dist = min(data.ranges)
+
+        if self.min_dist < 0.3:
+            rbt.drive_bot(0, 0, self.rate)
+            print("endin my movin")
+            self.end_docking_callback(ROBOT_STATE.DEDOCKING)
+        else:
+            print("movin fowad")
+            self.drive_bot(.08, .02, self.rate)
 
     def rotate(self, speed, angle, clockwise = True):
         # Create the Twist variable
@@ -170,7 +199,6 @@ class Robot:
 
         while(current_angle < relative_angle):
             drive_bot_pub.publish(vel_msg)
-            print("pubed")
             t1 = rospy.Time.now().to_sec()
             current_angle = angular_speed*(t1-t0)
 
@@ -186,8 +214,6 @@ if __name__ == "__main__":
     rospy.init_node('goal_publisher')
     rate = rospy.Rate(10)
     rbt = Robot()
-    rospy.Subscriber("/move_base/status", GoalStatusArray, rbt.goalReached)
-
 
     cnt = 0
     print("Starting runs!")
@@ -233,7 +259,7 @@ if __name__ == "__main__":
                          dist, marker = distAndMarkers 
                          print("saw marker")
                          # if within 110 cm we will swap our state into docking mode 
-                         if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 110: 
+                         if marker[0] == rbt.binTracker.binToGet.arucoId and dist[Z] < 150: 
                              # do some movement towards it 
                              print("Cancel Goal")
                              rbt.client.cancel_goal() 
@@ -241,29 +267,37 @@ if __name__ == "__main__":
                  if rbt.client.get_state() == GoalStatus.SUCCEEDED:
                       rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN
             if rbt.state == ROBOT_STATE.SEARCHING_FOR_BIN: 
-                distAndMarkers = va.fetch_bin_distance_vec()
+                print("fetching bin dist")
+
+                for _ in range(5):
+                    distAndMarkers = va.fetch_bin_distance_vec()
+                    print("grab dista dn mark")
+                    if distAndMarkers is not None:
+                        break
+
                 if distAndMarkers is not None:
                     dist, marker = distAndMarkers
                     x, y, z = dist
-                    # rotate 
-                    if x < FRONT_CAMERA_CENTRAL + 20: 
-                        rbt.drive_bot(0, 0, -0.3)
+                    if z <= 80:
+                        rbt.rotate(30, 180)
+                        rbt.start_docking_callback()
+                    elif x < FRONT_CAMERA_CENTRAL + 20: 
+                        rbt.rotate(10, 10, False)
                     # too left turn right 
                     elif x >  FRONT_CAMERA_CENTRAL - 20: 
-                        rbt.drive_bot(0, 0, 0.3)
+                        rbt.rotate(10, 10, True)
                     else:
-                        
-                        rbt.drive_bot(0, 0, 3.14) 
-                        rbt.state = ROBOT_STATE.DOCKING
+                        rbt.drive_bot(.1, .1, rate)
                 else: 
                     # rotate in place until you find it, if rotated 2x we will go back to goal movement 
-                    pass 
-            
-
+                    rbt.rotate(10, 10)
+ 
+            else:
+                print("other state", rbt.state)
             cnt += 1
 
-        
-        rate.sleep() 
+        if rbt.state != ROBOT_STATE.SEARCHING_FOR_BIN: 
+            rate.sleep() 
 
 
 

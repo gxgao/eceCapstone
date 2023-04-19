@@ -40,7 +40,7 @@ parameters = cv2.aruco.DetectorParameters_create()
 
 time.sleep(2.0)
 
-vs = VideoStream(src=0).start()
+vs = VideoStream(src=-1).start()
 
 cMtx, cDist = loadCoefficients()
 
@@ -72,4 +72,5 @@ def testf():
 		print(fetch_bin_distance_vec()) 
 			
 
-
+if __name__ == "__main__":
+    testf()
