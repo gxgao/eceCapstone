@@ -29,6 +29,8 @@ goal_2d_pub = rospy.Publisher('goal_2d', PoseStamped, queue_size=0)
 move_base_goal_pub = rospy.Publisher(r'/move_base_simple/goal', PoseStamped, queue_size=0)
 drive_bot_pub = rospy.Publisher(r'/cmd_vel', Twist, queue_size=0)
 
+ 
+
 class ROBOT_STATE(Enum):
     # state for idle, get new goal 
     IDLE = 0 
@@ -58,18 +60,8 @@ class Robot:
         self.sub = rospy.Subscriber('/scan', LaserScan, self.laser_callback)
         
         self.velCmd = Twist()
-        self.rate = rospy.Rate(10)
-        self.enable_laser_callback = False
-    
-    def start_docking_callback(self):
-        self.state = ROBOT_STATE.DOCKING
-        self.enable_laser_callback = True
-    
-    def end_docking_callback(self, state):
-        assert state != ROBOT_STATE.DOCKING
-        # self.sub.unregister()
-        self.enable_laser_callback = False
-        self.state = state
+        self.goal_arucoId = -1
+        self.laser_ranges = [] 
 
     def sendGoal(self, x, y, yaw): 
         rpyPose = PoseStamped() 
@@ -143,19 +135,7 @@ class Robot:
         drive_bot_pub.publish(self.velCmd) 
     
     def laser_callback(self, data):
-        if not self.enable_laser_callback:
-            print("early return from laser callback not enabled")
-            return
-        print("i made it past return")
-        self.min_dist = min(data.ranges)
-
-        if self.min_dist < 0.5:
-            rbt.drive_bot(0, 0, self.rate)
-            print("endin my movin")
-            self.end_docking_callback(ROBOT_STATE.DEDOCKING)
-        else:
-            print("movin backward")
-            self.drive_bot(-.08, .02, self.rate)
+        self.laser_ranges = data.ranges 
 
     def rotate(self, speed, angle, clockwise = True):
         # Create the Twist variable
@@ -235,6 +215,8 @@ if __name__ == "__main__":
                 rbt.state = ROBOT_STATE.FETCHING 
                 # rbt.sendGoal(float(x), float(y), float(0.0))
                 rbt.movebase_client(x, y)
+                rbt.goal_arucoId = freeBin.arucoId 
+
             if rbt.state == ROBOT_STATE.FETCHING: 
                  # check video frame once every 10 seconds 
                  if cnt % 10 == 0: 
@@ -258,25 +240,39 @@ if __name__ == "__main__":
                     distAndMarkers = va.fetch_bin_distance_vec()
                     print("grab dista dn mark")
                     if distAndMarkers is not None:
+                        print("saw something")
                         break
 
                 if distAndMarkers is not None:
                     dist, marker = distAndMarkers
-                    x, y, z = dist
-                    if z <= 80:
-                        rbt.rotate(30, 180)
-                        rbt.start_docking_callback()
-                    elif x < FRONT_CAMERA_CENTRAL + 20: 
-                        rbt.rotate(10, 10, False)
-                    # too left turn right 
-                    elif x >  FRONT_CAMERA_CENTRAL - 20: 
-                        rbt.rotate(10, 10, True)
-                    else:
-                        rbt.drive_bot(.1, .1, rate)
+                    print("marker detected", marker)
+                    if (marker[0][0] == rbt.goal_arucoId):
+                    
+                        x, y, z = dist
+                        print("z is ", z)
+                        if z <= 100:
+                            rbt.rotate(30, 180)
+                            rbt.state = ROBOT_STATE.DOCKING
+                        else:
+                            rbt.drive_bot(.1, .1, rate)
                 else: 
                     # rotate in place until you find it, if rotated 2x we will go back to goal movement 
-                    rbt.rotate(10, 10)
+                    if cnt % 10 == 0:
+                        rbt.rotate(8, 8)
  
+            elif rbt.state == ROBOT_STATE.DOCKING:
+                print("i made it past return")
+                min_dist = min(rbt.laser_ranges)
+                print("min dist is ", min_dist)
+                if min_dist < 0.5:
+                    rbt.drive_bot(0, 0, rate)
+                    print("endin my movin")
+                    rbt.state = ROBOT_STATE.DEDOCKING
+                else:
+                    print("movin backward")
+                    if cnt % 5 == 0:
+                        rbt.drive_bot(-.04, .02, rate)
+            
             else:
                 print("other state", rbt.state)
             cnt += 1
