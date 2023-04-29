@@ -13,10 +13,12 @@ from enum import Enum
 import video_aruco as va 
 import sys
 import binID
-
+import time
 
 import actionlib
+
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+import tf
 
 X,Y,Z = 0, 1, 2 
 # central axis of robot
@@ -135,8 +137,8 @@ class Robot:
         drive_bot_pub.publish(self.velCmd) 
     
     def laser_callback(self, data):
-        self.laser_ranges = data.ranges 
-
+        self.laser_ranges = list(data.ranges)
+    
     def rotate(self, speed, angle, clockwise = True):
         # Create the Twist variable
         vel_msg = Twist()
@@ -171,6 +173,52 @@ class Robot:
         vel_msg.angular.z = 0
         drive_bot_pub.publish(vel_msg)
 
+    def rotate_new(self, speed, goal_angle):
+        # Create the Twist variable
+        if goal_angle > 180:
+            goal_angle = -180 + (goal_angle - 180)
+        if goal_angle < -180:
+            goal_angle = 180 - (goal_angle + 180)
+        vel_msg = Twist()
+
+        # Converting from angles to radians
+        angular_speed = speed*2*PI/360
+
+        # We won't use linear components
+        vel_msg.linear.x=0
+        vel_msg.linear.y=0
+        vel_msg.linear.z=0
+        vel_msg.angular.x = 0
+        vel_msg.angular.y = 0
+
+        while abs(rbt.rot - goal_angle) > 1.0:
+            if (goal_angle >= 0 and rbt.rot >= 0) or (goal_angle <= 0 and rbt.rot <= 0):
+                clockwise = goal_angle >= rbt.rot
+            elif rbt.rot <= 0 and goal_angle >= 0:
+                clockwise =  goal_angle - rbt.rot <= (180 + rbt.rot) + 180 - goal_angle
+            elif rbt.rot >= 0 and goal_angle <= 0:
+                clockwise = (180 - rbt.rot) + (180 + goal_angle) <= rbt.rot - goal_angle 
+            else:
+                print("uh o oo")
+
+            if clockwise:
+                vel_msg.angular.z = abs(angular_speed)
+            else:
+                vel_msg.angular.z = -abs(angular_speed)
+
+            drive_bot_pub.publish(vel_msg)
+            rbt.rate.sleep()
+            self.update_tf()
+
+        vel_msg.angular.z = 0
+        drive_bot_pub.publish(vel_msg)
+
+    def update_tf(self):
+        t = self.tf_listener.getLatestCommonTime("map", "base_link")
+        position, quaternion = self.tf_listener.lookupTransform("map", "base_link", t)
+        rbt.trans = position
+        roll, pitch, yaw = tf.transformations.euler_from_quaternion(quaternion)
+        rbt.rot = yaw*180/3.1415926
 
 
 if __name__ == "__main__":
@@ -179,10 +227,17 @@ if __name__ == "__main__":
     rospy.init_node('goal_publisher')
     rate = rospy.Rate(10)
     rbt = Robot()
-
+    rbt.rate = rate
+    rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN 
+    rbt.goal_arucoId = 1 
     cnt = 0
     print("Starting runs!")
+    rbt.tf_listener = tf.TransformListener()
+    rbt.tf_listener.waitForTransform("/map", "/base_link", rospy.Time(0), rospy.Duration(3.0))
+
     while not rospy.is_shutdown(): 
+        rbt.update_tf()
+
         if cnt % 10 == 0:
             print(f"state:  {rbt.state}") 
         
@@ -203,6 +258,12 @@ if __name__ == "__main__":
             elif cmd == "r":
                 angle = input("angle")
                 rbt.rotate(30, float(angle))
+            elif cmd == "b":
+                while True:
+                    rbt.movebase_client(3.0, 0.0)
+                    time.sleep(45)
+                    rbt.movebase_client(0.0, 0.0)
+                    time.sleep(45)
         else:  
         # do some automatic stuff 
             if rbt.state == ROBOT_STATE.IDLE: 
@@ -234,45 +295,77 @@ if __name__ == "__main__":
                  if rbt.client.get_state() == GoalStatus.SUCCEEDED:
                       rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN
             if rbt.state == ROBOT_STATE.SEARCHING_FOR_BIN: 
-                print("fetching bin dist")
 
                 for _ in range(5):
-                    distAndMarkers = va.fetch_bin_distance_vec()
-                    print("grab dista dn mark")
-                    if distAndMarkers is not None:
-                        print("saw something")
+                    distAndMarkers, distAndMarkers_back = va.fetch_bin_distance_vec(), va.fetch_bin_distance_vec(False)
+                    if distAndMarkers_back is not None and distAndMarkers_back[1][0][0] == rbt.goal_arucoId:
+                        rbt.state = ROBOT_STATE.DOCKING
                         break
-
-                if distAndMarkers is not None:
-                    dist, marker = distAndMarkers
-                    print("marker detected", marker)
-                    if (marker[0][0] == rbt.goal_arucoId):
+                    if distAndMarkers is not None and distAndMarkers[1][0][0] == rbt.goal_arucoId:
+                        break
                     
-                        x, y, z = dist
-                        print("z is ", z)
-                        if z <= 100:
-                            rbt.rotate(30, 180)
-                            rbt.state = ROBOT_STATE.DOCKING
-                        else:
-                            rbt.drive_bot(.1, .1, rate)
-                else: 
-                    # rotate in place until you find it, if rotated 2x we will go back to goal movement 
-                    if cnt % 10 == 0:
-                        rbt.rotate(8, 8)
+                
+                if rbt.state != ROBOT_STATE.DOCKING:
+                    if distAndMarkers is not None:
+                        dist, marker = distAndMarkers
+                        print("marker detected while searching using front camera", marker)
+                        if (marker[0][0] == rbt.goal_arucoId):
+                           # x axis is horizontal to robot, right is decreasing
+                           # moving roomba up increases y
+                           # z is obvious:
+
+                            x, y, z = dist
+                            print("z is ", z)
+                            if z <= 30:
+                                rbt.drive_bot(-.1, .1, rate)
+                            elif z >= 100:
+                                rbt.drive_bot(.1, .1, rate)
+                            elif x < -40:
+                                rbt.rotate_new(8, rbt.rot + 4)
+                            elif x > -20:
+                                rbt.rotate_new(8, rbt.rot - 4)
+                            else:
+                                rbt.rotate_new(30,rbt.rot+180)
+                                rbt.state = ROBOT_STATE.DOCKING
+                    else: 
+                        # rotate in place until you find it, if rotated 2x we will go back to goal movement 
+                        if cnt % 20 == 0:
+                            rbt.rotate(8, 8)
  
             elif rbt.state == ROBOT_STATE.DOCKING:
-                print("i made it past return")
-                min_dist = min(rbt.laser_ranges)
-                print("min dist is ", min_dist)
-                if min_dist < 0.5:
-                    rbt.drive_bot(0, 0, rate)
-                    print("endin my movin")
-                    rbt.state = ROBOT_STATE.DEDOCKING
+                print("docking")
+                for _ in range(5):
+                    distAndMarkers = va.fetch_bin_distance_vec(False)
+                    time.sleep(1)
+                    if distAndMarkers is not None and distAndMarkers[1][0][0] == rbt.goal_arucoId:
+                        break
+                
+                if distAndMarkers is None or distAndMarkers[1][0][0] != rbt.goal_arucoId:
+                    print("swapping back to searching")
+                    rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN
                 else:
-                    print("movin backward")
-                    if cnt % 5 == 0:
-                        rbt.drive_bot(-.04, .02, rate)
-            
+                    dist, marker = distAndMarkers
+                    print("marker detected", marker)
+                    # get distance of bin window from lidar 
+                    x, y, z = dist
+                    print("my x", x)
+                    if x < -31:
+                        print("-30")
+                        rbt.rotate_new(8, rbt.rot + 2)
+                    elif x > -25:
+                        print("-26")
+                        rbt.rotate_new(8, rbt.rot - 2)
+                    else:
+                        min_dist = min(rbt.laser_ranges[500:650])
+                        while min_dist > .3:
+                            min_dist = min(rbt.laser_ranges[500:650])
+                            min_index = rbt.laser_ranges[500:650].index(min_dist)
+                            print("min dist is ", min_dist)
+
+                            rbt.drive_bot(-.06, .04, rate) # i hope since we sleep min_dist gets edited
+                            rate.sleep()
+                            rate.sleep()
+                        rbt.state = ROBOT_STATE.DEDOCKING
             else:
                 print("other state", rbt.state)
             cnt += 1

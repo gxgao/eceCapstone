@@ -25,22 +25,29 @@ import time
 
 # Pin Definitions
 PUL_PIN = 32
-DIR_PIN = 31
-ENA_PIN = 29
+DIR_PIN = 12
+ENA_PIN = 11
+ENA_PIN_2 = 29
 
+ENA_ON = GPIO.LOW
+ENA_OFF = GPIO.HIGH
+
+ENA_ON_2 = GPIO.LOW
+ENA_OFF_2 = GPIO.HIGH
 def main():
     # Pin Setup:
     GPIO.setmode(GPIO.BOARD)  # BOARD pin numbering scheme
     
     # Set pin as an output pin with optional initial state of HIGH
-    GPIO.setup(PUL_PIN, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(PUL_PIN, GPIO.OUT, initial=GPIO.HIGH)
     GPIO.setup(DIR_PIN, GPIO.OUT, initial=GPIO.LOW)
-    GPIO.setup(ENA_PIN, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.setup(ENA_PIN, GPIO.OUT, initial=ENA_OFF)
+    GPIO.setup(ENA_PIN_2, GPIO.OUT, initial=ENA_OFF_2)
     
     # p = GPIO.PWM(PUL_PIN, 1000)
 
-    PERIOD = 0.0002
-    ITERS = 4800
+    PERIOD = 0.001
+    ITERS = 2600
     print("Starting demo, press CTRL+C to exit\n")
 
 
@@ -50,33 +57,37 @@ def main():
             input("Press ENTER to raise cam")
             
             GPIO.output(DIR_PIN, GPIO.HIGH)
-            GPIO.output(ENA_PIN, GPIO.LOW)
+            GPIO.output(ENA_PIN, ENA_ON)
+            GPIO.output(ENA_PIN_2, ENA_ON_2)
             
             # p.start(50)
             # time.sleep(2.4)
             # p.stop()
             for i in range(ITERS):
-                GPIO.output(PUL_PIN, GPIO.HIGH)
-                time.sleep(PERIOD)
                 GPIO.output(PUL_PIN, GPIO.LOW)
+                time.sleep(PERIOD)
+                GPIO.output(PUL_PIN, GPIO.HIGH)
                 time.sleep(PERIOD)
 
             
-            GPIO.output(ENA_PIN, GPIO.HIGH)
+            GPIO.output(ENA_PIN, ENA_OFF)
+            GPIO.output(ENA_PIN_2, ENA_OFF_2)
             GPIO.output(DIR_PIN, GPIO.LOW)
             input("Press ENTER to lower cam")
-            GPIO.output(ENA_PIN, GPIO.LOW)
+            GPIO.output(ENA_PIN, ENA_ON)
+            GPIO.output(ENA_PIN_2, ENA_ON_2)
             
             # p.start(50)
             # time.sleep(2.4)
             # p.stop()
             for j in range(ITERS):
-                GPIO.output(PUL_PIN, GPIO.HIGH)
-                time.sleep(PERIOD)
                 GPIO.output(PUL_PIN, GPIO.LOW)
                 time.sleep(PERIOD)
+                GPIO.output(PUL_PIN, GPIO.HIGH)
+                time.sleep(PERIOD)
 
-            GPIO.output(ENA_PIN, GPIO.HIGH)
+            GPIO.output(ENA_PIN, ENA_OFF)
+            GPIO.output(ENA_PIN_2, ENA_OFF_2)
             GPIO.output(DIR_PIN, GPIO.LOW)
             print()
 
