@@ -348,13 +348,27 @@ if __name__ == "__main__":
                     print("marker detected", marker)
                     # get distance of bin window from lidar 
                     x, y, z = dist
-                    print("my x", x)
-                    if x < -31:
-                        print("-30")
-                        rbt.rotate_new(8, rbt.rot + 2)
-                    elif x > -25:
-                        print("-26")
-                        rbt.rotate_new(8, rbt.rot - 2)
+                    # dist, l_x, r_x
+                    # todo add speed and rotation to back camera array
+                    back_camera_array = [(96, -43, -34), (80, -32, -25), (63, -28, -20), (50, -24, -17), (40, -19.7, -12.3), (30, -15.7, -10.6)]
+                    calibrate = None
+                    for i in range(len(back_camera_array)):
+                        if z > back_camera_array[i][0]:
+                            calibrate = back_camera_array[i]
+                            break
+                    print(f"picked {calibrate}") 
+                    if calibrate is not None:
+                        _, l_x, r_x = calibrate
+                        print("my x", x)
+                        if  x < l_x:
+                            print(f"{x} < {l_x}")
+                            rbt.rotate_new(8, rbt.rot + 2)
+                        elif x > r_x:
+                            print(f"{x} > {r_x}")
+                            rbt.rotate_new(8, rbt.rot - 2)
+                        else:
+                            print(f"{l_x} < {x} < {r_x}")
+                            rbt.drive_bot(-.06, .04, rate) # i hope since we sleep min_dist gets edited
                     else:
                         min_dist = min(rbt.laser_ranges[500:650])
                         while min_dist > .3:
@@ -365,7 +379,7 @@ if __name__ == "__main__":
                             rbt.drive_bot(-.06, .04, rate) # i hope since we sleep min_dist gets edited
                             rate.sleep()
                             rate.sleep()
-                        rbt.state = ROBOT_STATE.DEDOCKING
+                            rbt.state = ROBOT_STATE.DEDOCKING
             else:
                 print("other state", rbt.state)
             cnt += 1
