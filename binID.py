@@ -1,17 +1,14 @@
 import dbInterface 
 from enum import Enum
 
-class BIN_DIR(Enum):
-    FRONT = 0
-    BACK = 1
-    RIGHT = 2
-    LEFT = 3 
+class BIN_SIDE(Enum):
+    SLIM = 0 
+    WIDE = 1 
 
 
 
 class Bin:
-    def __init__(self, arucoId, binId, x, y, takeOut, missing): 
-        self.arucoId = arucoId 
+    def __init__(self, binId, x, y, takeOut, missing): 
         self.binId = binId 
         self.x = x 
         self.y = y 
@@ -37,10 +34,16 @@ class BinTracker:
         emptyBins = dbInterface.getFreeBins()
         if (len(emptyBins) == 0):
             return None 
-        aruco, binId, x, y, takeOut, missing = emptyBins[0] 
-        self.binToGet = Bin(aruco, binId, x, y, takeOut, missing)
+        _, binId, x, y, takeOut, missing = emptyBins[0] 
+        self.binToGet = Bin(binId, x, y, takeOut, missing)
         return self.binToGet 
 
+    def ArucoIdToBinId(self, aruco_id): 
+        return aruco_id // 2 
+    
+    def GetBinSide(self, aruco_id):
+        return BIN_SIDE(aruco_id % 2) 
+    
 
     # takes list of ids and queries database and returns list of bins 
     def checkIds(self, markerIds):

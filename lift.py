@@ -44,6 +44,11 @@ GPIO.setup(PUL_PIN, GPIO.OUT, initial=GPIO.HIGH)
 GPIO.setup(DIR_PIN, GPIO.OUT, initial=GPIO.LOW)
 GPIO.setup(ENA_PIN, GPIO.OUT, initial=ENA_OFF)
 GPIO.setup(ENA_PIN_2, GPIO.OUT, initial=ENA_OFF_2)
+
+GPIO.output(ENA_PIN, ENA_OFF)
+GPIO.output(ENA_PIN_2, ENA_OFF_2)
+GPIO.output(DIR_PIN, GPIO.LOW)
+
 atexit.register(GPIO.cleanup)
 
 class Arms:
@@ -94,6 +99,8 @@ class Arms:
 
 def main():
     print("Starting demo, press CTRL+C to exit\n")
+    while True:
+        time.sleep(10)
 
 
 if __name__ == '__main__':
