@@ -4,7 +4,7 @@ import rospy
 from sensor_msgs.msg import LaserScan
 import sensor_msgs.msg
 
-PI = 3.1415
+PI = 3.1415196
 
 def callback(msg):
     # Modify the laserscan message to have a smaller field of view
@@ -26,6 +26,6 @@ def callback(msg):
 
 if __name__ == '__main__':
     rospy.init_node('laser_scan_proxy')
-    pub = rospy.Publisher('/scan_180', LaserScan, queue_size=10)
+    pub = rospy.Publisher('/scan_180', LaserScan, queue_size=0)
     rospy.Subscriber('/scan', LaserScan, callback)
     rospy.spin()

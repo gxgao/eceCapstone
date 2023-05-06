@@ -82,30 +82,32 @@ def callback(data):
     global cnt
     global bin_window
     global first
-
+    
     cnt += 1
     if cnt % 15 != 0:
         return
-
-    df = clean(data)
-    print("min_dist", min(data.ranges[500:650]))
-    def get_window(L, R):
-        L = L % df.shape[0]
-        R = R % df.shape[0]
-        if L <= R:
-            return df[L:R]
-        else:
-            return pd.concat([df[L:], df[:R]])
-    # todo guess angle
-    if first:
-        bin_window = identify_bin_window(df, .44)
-        first = False
-        print(bin_window)
-    # pdb.set_trace()
     
-    # print(get_window(center_of_bin - bin_window.shape[0] // 2, center_of_bin + bin_window.shape[0] // 2))
-    print("normal identify", identify_bin(df, bin_window))
-    print("filtered identify", identify_bin(df.iloc[400:800], bin_window))
+    print("min dist", min(data.ranges[500:650]))
+    if False:
+        df = clean(data)
+        print("min_dist", min(data.ranges[500:650]))
+        def get_window(L, R):
+            L = L % df.shape[0]
+            R = R % df.shape[0]
+            if L <= R:
+                return df[L:R]
+            else:
+                return pd.concat([df[L:], df[:R]])
+        # todo guess angle
+        if first:
+            bin_window = identify_bin_window(df, .44)
+            first = False
+            print(bin_window)
+        # pdb.set_trace()
+    
+        # print(get_window(center_of_bin - bin_window.shape[0] // 2, center_of_bin + bin_window.shape[0] // 2))
+        print("normal identify", identify_bin(df, bin_window))
+        print("filtered identify", identify_bin(df.iloc[400:800], bin_window))
 
 
 

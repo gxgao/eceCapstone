@@ -47,6 +47,7 @@ vs_back = VideoStream(src=2).start()
 cMtx, cDist = loadCoefficients()
 
 markerSizeInCM = 5.715
+markerSizeInCM = 5.1
 # returns distance vector if (translation_vector, bin) was found else None 
 # translation_vector = [x, y, z]
 def fetch_bin_distance_vec(front = True): 

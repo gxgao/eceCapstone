@@ -37,10 +37,11 @@ class Vector:
 
 # TODO: add array for slim side
 back_camera_array = [
-    Vector(105, -48, -31, -.1, .1),
-    Vector(85, -35, -27, -.1, .1),
-    Vector(67, -31, -25, -.06, .04),
-    Vector(56, -26, -24, -.05, .04)
+    Vector(z=105, l_x=-48, r_x=-31, speed=-.1, dist=.1),
+    Vector(z=85, l_x=-35, r_x=-27, speed=-.1, dist=.1),
+    Vector(z=67, l_x=-31, r_x=-25, speed=-.04, dist=.04),
+    Vector(z=56, l_x=-26, r_x=-24, speed=-.04, dist=.04),
+    Vector(z=52, l_x=-25.5, r_x=-21.5, speed=-.04, dist=.04)
 ]
 
 cancel_pub = rospy.Publisher("/move_base/cancel", GoalID, queue_size=1)
@@ -82,6 +83,7 @@ class Robot:
         self.sub = rospy.Subscriber("/scan", LaserScan, self.laser_callback)
 
         self.goal_bin_id = -1
+        self.goal_bin = None 
         self.laser_ranges = []
 
         self.arms = Arms()
@@ -316,30 +318,32 @@ class Robot:
         rbt.rot = yaw * 180 / 3.1415926
 
     def HandleIdle(self):
-        freeBin = rbt.binTracker.getFreeBin()
-        x, y = freeBin.getXY()
+        bin_to_get = self.binTracker.getFreeBin()
+        if bin_to_get is None:
+            print("here")
+            bin_to_get = self.binTracker.getTakeOutBin()
+            if bin_to_get is None:
+                return
+         
+        x, y = bin_to_get.getXY()
+        self.goal_bin = bin_to_get 
         print(f"free bin {float(x)}, {float(y)}")
         rbt.state = ROBOT_STATE.FETCHING
         # rbt.sendGoal(float(x), float(y), float(0.0))
         self.movebase_client(x, y)
-        self.goal_bin_id = freeBin.binId
+        self.goal_bin_id = bin_to_get.binId
 
     def HandleFetching(self):
         if self.cnt % 10 == 0:
-            distAndMarkers = va.fetch_bin_distance_vec()
-            print(distAndMarkers)
-            if distAndMarkers is not None:
-                dist, marker = distAndMarkers
-                print("saw marker")
-                # if within 110 cm we will swap our state into docking mode
-                if (
-                    marker[0] == rbt.binTracker.binToGet.arucoId
-                    and dist[Z] < 150
-                ):
-                    # do some movement towards it
-                    print("Cancel Goal with dist z:", dist[Z])
-                    self.client.cancel_goal()
-                    self.state = ROBOT_STATE.DOCKING
+            for forward in (False, True):
+                distAndMarkers = self.DetectBin(forward=forward)
+                if distAndMarkers is not None:
+                    dist, _ = distAndMarkers
+                    if dist[Z] < 150:
+                        self.state = ROBOT_STATE.SEARCHING_FOR_BIN
+                        self.client.cancel_goal()
+                        return
+            
         if self.client.get_state() == GoalStatus.SUCCEEDED:
             print("Reached destination")
             self.state = ROBOT_STATE.SEARCHING_FOR_BIN
@@ -401,6 +405,10 @@ class Robot:
         return self.running and not rospy.is_shutdown()
 
     def HandleDocking(self):
+        ROTATION_SPEED = 5.5
+        DOCKING_SPEED = -.05
+        FINAL_DOCKING_SPEED = -0.2
+
         print("docking")
         distAndMarkers = self.DetectBin(forward=False) 
 
@@ -423,7 +431,7 @@ class Robot:
         for i in range(len(back_camera_array)):
             if z > back_camera_array[i].z:
                 calibrate = back_camera_array[i]
-                if i == len(back_camera_array) - 1:
+                if i >= len(back_camera_array) - 2:
                     sleep_extra = True
                 break
         print(f"picked {calibrate} and sleep_extra={sleep_extra}")
@@ -444,20 +452,19 @@ class Robot:
             l_x = lerp(prev_calibrate.z, prev_calibrate.l_x, calibrate.z, calibrate.l_x, z) 
             r_x = lerp(prev_calibrate.z, prev_calibrate.r_x, calibrate.z, calibrate.r_x, z) 
 
-            print("my x", x)
+            print("my x", x, " sleep extra ", sleep_extra)
             if x < l_x:
                 print(f"{x} < {l_x}")
-                self.rotate_new(5.5, self.rot - 1.5, sleep_extra)
+                self.rotate_new(ROTATION_SPEED, self.rot - 1.5, sleep_extra)
             elif x > r_x:
                 print(f"{x} > {r_x}")
-                self.rotate_new(5.5, self.rot + 1.5, sleep_extra)
+                self.rotate_new(ROTATION_SPEED, self.rot + 1.5, sleep_extra)
             else:
                 print(f"{l_x} < {x} < {r_x}")
                 self.drive_bot(
                     calibrate.speed, calibrate.dist
                 )  # i hope since we sleep min_dist gets edited
-            if sleep_extra:
-                self.ForceSleepSec(0.25)
+            self.ForceSleepSec(.25)
         else:
             input("now going straight in")
 
@@ -467,7 +474,7 @@ class Robot:
                 return min_dist
 
             side = self.binTracker.GetBinSide(markers[0][0])
-            min_dist_limit = .27 if side == binID.BIN_SIDE.WIDE else .22
+            min_dist_limit = .27 if side == binID.BIN_SIDE.WIDE else .20
 
             distances = []
             while get_min_dist() > min_dist_limit:
@@ -477,29 +484,42 @@ class Robot:
                 dist_to_travel = min(0.03, max(.02, min_dist - min_dist_limit))
                 print("dist to travel ", dist_to_travel)
                 # self.drive_back(0.05, dist_to_travel)
-                self.drive_bot(-.05, dist_to_travel)
-                self.ForceSleepSec(0.25)
+                self.drive_bot(DOCKING_SPEED, dist_to_travel)
+                self.ForceSleepSec(1.0)
 
                 if len(distances) > 3 and abs(distances[-1] - distances[-3]) < .01:
                     break
                 prev_min_dist = min_dist
 
             # add lift code ...
-            # self.arms.raise_arms()
+            if min_dist <= min_dist_limit + .05:
+                # post lift code
+                # self.movebase_client(*self.get_dropoff())
+                # self.state = ROBOT_STATE.RETURNING
+                self.drive_bot(FINAL_DOCKING_SPEED, .08)
+                self.ForceSleepSec(2)
+                self.arms.raise_arms()
+                # print("done")
+                self.binTracker.binPickUp(self.goal_bin)
+                self.goal_bin = None 
+                x, y = self.binTracker.currBin.getTakeOutXY()
+                # if this bin has already been taken out we want the goal to be the home 
+                if not self.binTracker.currBin.takeOut: 
+                    x, y = self.binTracker.currBin.getHomeXY() 
+                self.movebase_client(x, y)
+                self.state = ROBOT_STATE.RETURNING
+                # self.drive_bot(-.05, .2)
+                # self.ForceSleepSec(6)
+                # self.arms.lower_arms()
+            else:
+                self.running = False
+                print("Failed to pickup")
 
-            # post lift code
-            # self.movebase_client(*self.get_dropoff())
-            # self.state = ROBOT_STATE.RETURNING
-            self.drive_bot(-.2, .08)
-            print("done")
-            self.running = False
-    
     def HandleReturning(self):
         if self.client.get_state() == GoalStatus.SUCCEEDED:
             self.state = ROBOT_STATE.DEDOCKING
     
     def HandleDedocking(self):
-        # self.arms.lower_arms()
 
         rob_x, rob_y = self.pos
         arm_offset = 0.2794
@@ -507,10 +527,13 @@ class Robot:
         arm_ang = ang + 180 % 360
         bin_x = arm_offset * cos(arm_ang) + rob_x
         bin_y = arm_offset * sin(arm_ang) + rob_y
-        self.binTracker.binDrop(True, bin_x, bin_y)
+        # flip the takeout status 
+        self.binTracker.binDrop(not self.binTracker.currBin.takeOut, bin_x, bin_y)
 
         self.state = ROBOT_STATE.IDLE
-        self.drive_bot(-.05, .5)
+        self.arms.lower_arms()
+
+        self.drive_bot(.05, .5)
 
     def RunLoopOnce(self):
         print(self.state)
@@ -580,6 +603,16 @@ class Robot:
                 speedx = float(speedx)
                 x = float(x)
                 self.drive_back(speedx, x, splits=10)
+            elif cmd == "bt":
+                while True:
+                    self.movebase_client(2.5, 0)
+                    time.sleep(20)
+                    self.arms.raise_arms()
+                    time.sleep(2)
+                    self.arms.lower_arms()
+                    time.sleep(2)
+                    self.movebase_client(0, 0)
+                    time.sleep(20)
             elif cmd == "r":
                 angle = input("angle")
                 self.rotate(30, float(angle))
@@ -610,9 +643,8 @@ if __name__ == "__main__":
             rbt.HandleManual()
 
         # TODO: remove for testing 
+        # rbt.goal_bin_id = 0
         # rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN
-        rbt.goal_bin_id = 0
-        rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN
         rbt.Loop()
     
     except KeyboardInterrupt:

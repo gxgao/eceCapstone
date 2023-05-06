@@ -36,7 +36,11 @@ ENA_ON_2 = GPIO.LOW
 ENA_OFF_2 = GPIO.HIGH
 
 PERIOD = 0.001
-ITERS = 2600
+OLD_ITERS = 2600
+
+OLD_RAISE_ITERS = 2800
+RAISE_ITERS = 3400
+LOWER_ITERS = 2600
 
 import atexit
 GPIO.setmode(GPIO.BOARD)  # BOARD pin numbering scheme
@@ -62,32 +66,38 @@ class Arms:
         GPIO.output(ENA_PIN, ENA_ON)
         GPIO.output(ENA_PIN_2, ENA_ON_2)
     
+    def force_lower(self):
+        GPIO.output(DIR_PIN, GPIO.LOW)
+        self.run_arms(LOWER_ITERS, PERIOD)
+        self.raised = False
+    
+    def force_raise(self):
+        GPIO.output(DIR_PIN, GPIO.HIGH)
+        self.run_arms(RAISE_ITERS, PERIOD)
+        self.raised = True
+
     def raise_arms(self):
         if self.raised:
             return
-        
         GPIO.output(DIR_PIN, GPIO.HIGH)
-        self.enable_motors()
-        for i in range(ITERS):
-            GPIO.output(PUL_PIN, GPIO.LOW)
-            time.sleep(PERIOD)
-            GPIO.output(PUL_PIN, GPIO.HIGH)
-            time.sleep(PERIOD)
-        self.disable_motors()
+        self.run_arms(RAISE_ITERS, PERIOD)
         self.raised = True
-    
+
+    def run_arms(self, iters, period):
+        self.enable_motors()
+        for i in range(iters):
+            GPIO.output(PUL_PIN, GPIO.LOW)
+            time.sleep(period)
+            GPIO.output(PUL_PIN, GPIO.HIGH)
+            time.sleep(period)
+        self.disable_motors()
+
     def lower_arms(self):
         if not self.raised:
             return
         
         GPIO.output(DIR_PIN, GPIO.LOW)
-        self.enable_motors()
-        for i in range(ITERS):
-            GPIO.output(PUL_PIN, GPIO.LOW)
-            time.sleep(PERIOD)
-            GPIO.output(PUL_PIN, GPIO.HIGH)
-            time.sleep(PERIOD)
-        self.disable_motors()
+        self.run_arms(LOWER_ITERS, PERIOD)
         self.raised = False
     
     def __init__(self):

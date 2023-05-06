@@ -19,6 +19,8 @@
 // Include statements 
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
+#include "sensor_msgs/LaserScan.h"
+#include "std_msgs/String.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include <tf/transform_broadcaster.h>
 #include <iostream>
@@ -27,6 +29,7 @@
 using namespace std;
  
 // Initialize ROS publishers
+ros::Publisher pub_scan;
 ros::Publisher pub;
 ros::Publisher pub2;
 ros::Publisher move_base_goal_pub; 
@@ -110,7 +113,34 @@ void handle_pose_init_norviz(float_t x, float_t y, float_t yaw) {
   rpyPose.pose.orientation.w = 0;
   pub2.publish(rpyPose);
 }
- 
+void handle_laser(const sensor_msgs::LaserScan::ConstPtr &scan)
+{
+  sensor_msgs::LaserScan new_scan;
+  new_scan.header.stamp = scan->header.stamp;
+  new_scan.header.frame_id = scan->header.frame_id;
+  new_scan.angle_min = -1.57;
+  new_scan.angle_max = 1.57;
+  new_scan.angle_increment = scan->angle_increment;
+  new_scan.time_increment = scan->time_increment;
+  new_scan.range_min = scan->range_min;
+  new_scan.range_max= scan->range_max;
+
+  new_scan.intensities.reserve(573);
+  new_scan.ranges.reserve(573);
+
+  // for (int i = 0; i < 287; i++) {
+  //   new_scan.ranges[573 - i - 1] = scan->ranges[i];
+  //   new_scan.intensities[573 - i - 1] = scan->intensities[i];
+  // }
+  // for (int i = 861; i < 1147; i++) {
+  //   new_scan.ranges[i] = scan->ranges[i];
+  //   new_scan.intensities[i] = scan->intensities[i];
+  // }
+  std::cout << "callback " << std::endl;
+  // pub.publish(new_scan);
+
+}
+
 int main(int argc, char **argv) {
   ros::init(argc, argv, "rviz_click_to_2d");
   ros::NodeHandle node;
@@ -120,19 +150,9 @@ int main(int argc, char **argv) {
   ros::Subscriber sub = node.subscribe("move_base_simple/goal", 0, handle_goal);
   ros::Subscriber sub2 = node.subscribe("initialpose", 0, handle_initial_pose);
   ros::Rate loop_rate(10);
-  int cnt = 0;  
   while (ros::ok()) {
-	if (cnt == -1) {
-
-		handle_pose_init_norviz(-0.05025903135538101, -0.035147152841091156, 0.1114344522356987); 	
-	}	
-	if (cnt == -1) {
-
-		handle_pose_goal_norviz(-0.9060239195823669, 0.55168217420578, 3.017787456512451); 	
-	}
-        ros::spinOnce();
-        loop_rate.sleep();
-	cnt++; 
+    ros::spinOnce();
+    loop_rate.sleep();
   }
   return 0;
 }

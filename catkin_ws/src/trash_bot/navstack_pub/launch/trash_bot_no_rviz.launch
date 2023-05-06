@@ -2,11 +2,11 @@
 <param name="/use_sim_time" value="false"/>
 
   <!-- Transformation Configuration ... Setting Up the Relationships Between Coordinate Frames --> 
-  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.04191 0.01905 0.19812 3.14159 0 0 base_link laser 10" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.025 -0.023 0.19812 3.14159 0 0 base_link laser 40" />
  
-  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser_180" args="0.04191 0.01905 0.19812 0 0 0 base_link laser_180 10" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser_180" args="0.025 -0.023 0.19812 0 0 0 base_link laser_180 40" />
  
-  <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 10" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 40" />
   <!-- odom to base_footprint transform will be provided by the robot_pose_ekf node -->
   <!-- map to odom will be provided by the AMCL -->
   <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 30" /> -->
@@ -22,7 +22,9 @@
     <param name="inverted"            type="bool"   value="false"/>
     <param name="angle_compensate"    type="bool"   value="true"/>
   </node>  
-  <node pkg="navstack_pub" name="laser_scan_proxy" type="laser_scan_proxy.py" output="screen" />
+  <node pkg="new_pkg" type="new_node" name="new_node">
+  </node>   
+  <!-- <node pkg="navstack_pub" name="laser_scan_proxy" type="laser_scan_proxy.py" output="screen" /> -->
 <!--
  <node pkg="laser_scan_matcher" type="laser_scan_matcher_node"
     name="laser_scan_matcher_node" output="screen">
@@ -44,6 +46,7 @@
   <!-- Subscribe: /move_base_simple/goal -->
   <!-- Publish: /cmd_vel -->
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="transform_tollerance" value="0.2" />
     <!-- <param name="controller_frequency" value="0.5" /> -->
     <rosparam file="$(find navstack_pub)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find navstack_pub)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
@@ -64,12 +67,14 @@
   <!-- Publish: /amcl_pose, /particlecloud, /tf -->
 <node pkg="amcl" type="amcl" name="amcl" output="screen"> 
   <!-- Publish scans from best pose at a max of 10 Hz -->
+  <!-- <param name="update_min_a" value=".1"/> -->
+  <!-- <param name="update_min_d" value=".1"/> -->
   <param name="odom_model_type" value="diff"/> 
   <param name="scan_topic" value="scan_180"/>
-  <param name="odom_alpha1" value="0.2" />
-  <param name="odom_alpha2" value="0.2" />
-  <param name="odom_alpha3" value="0.2" />
-  <param name="odom_alpha4" value="0.2" />
+  <param name="odom_alpha1" value="0.5" />
+  <param name="odom_alpha2" value="0.5" />
+  <param name="odom_alpha3" value="0.0" />
+  <param name="odom_alpha4" value="0.0" />
   </node> 
 
   <!-- <include file="$(find gmcl)/examples/gmcl_diff.launch" /> -->

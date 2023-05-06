@@ -74,9 +74,15 @@ int main(int argc, char **argv) {
   pub2 = node.advertise<geometry_msgs::PoseStamped>("initial_2d", 0);
   ros::Subscriber sub = node.subscribe("move_base_simple/goal", 0, handle_goal);
   ros::Subscriber sub2 = node.subscribe("initialpose", 0, handle_initial_pose);
+  auto str_pub = node.advertise<std_msgs::String>("stringycool", 5);
   ros::Rate loop_rate(10);
   while (ros::ok()) {
+        std_msgs::String str;
+      str.data = "hello";
+    str_pub.publish(str);
+        ROS_WARN("HAHAH")
         ros::spinOnce();
+        throw "adfadsf";
         loop_rate.sleep();
   }
   return 0;

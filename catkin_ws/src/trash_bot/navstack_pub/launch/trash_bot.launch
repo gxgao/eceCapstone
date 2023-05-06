@@ -6,7 +6,7 @@
  
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser_180" args="0.04191 0.01905 0.19812 0 0 0 base_link laser_180 40" />
  
-  <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 10" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="0 0 0 0 0 0 base_footprint base_link 40" />
   <!-- odom to base_footprint transform will be provided by the robot_pose_ekf node -->
   <!-- map to odom will be provided by the AMCL -->
   <!-- <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 30" /> -->
@@ -22,7 +22,9 @@
     <param name="inverted"            type="bool"   value="false"/>
     <param name="angle_compensate"    type="bool"   value="true"/>
   </node>  
-  <node pkg="navstack_pub" name="laser_scan_proxy" type="laser_scan_proxy.py" output="screen" />
+  <!-- <node pkg="navstack_pub" name="laser_scan_proxy" type="laser_scan_proxy.py" output="screen" /> -->
+  <node pkg="new_pkg" type="new_node" name="new_node">
+  </node>
 <!--
  <node pkg="laser_scan_matcher" type="laser_scan_matcher_node"
     name="laser_scan_matcher_node" output="screen">
@@ -67,10 +69,10 @@
   <!-- Publish scans from best pose at a max of 10 Hz -->
   <param name="odom_model_type" value="diff"/> 
   <param name="scan_topic" value="scan_180"/>
-  <param name="odom_alpha1" value="0.2" />
-  <param name="odom_alpha2" value="0.2" />
-  <param name="odom_alpha3" value="0.2" />
-  <param name="odom_alpha4" value="0.2" />
+  <param name="odom_alpha1" value="0.4" />
+  <param name="odom_alpha2" value="0.4" />
+  <param name="odom_alpha3" value="0.6" />
+  <param name="odom_alpha4" value="0.4" />
   </node> 
 
   <!-- <include file="$(find gmcl)/examples/gmcl_diff.launch" /> -->
