@@ -102,6 +102,13 @@ class Robot:
 
         self.already_slept = False
 
+        self.search_rotation_count = 0
+
+    def SetState(self, new_state):
+        if self.state != ROBOT_STATE.SEARCHING_FOR_BIN and new_state == ROBOT_STATE.SEARCHING_FOR_BIN:
+            self.search_rotation_count = 0
+        self.state = new_state
+
     def SetPosition(self, x, y, yaw):
         rpyPose = self.CreatePoseStamped(x, y, yaw)
         rpyPoseWithCovarianceStamped = PoseWithCovarianceStamped()
@@ -324,7 +331,7 @@ class Robot:
             bin_to_get = self.binTracker.getTakeOutBin()
             if bin_to_get is None:
                 return
-         
+        print(bin_to_get) 
         x, y = bin_to_get.getXY()
         self.goal_bin = bin_to_get 
         print(f"free bin {float(x)}, {float(y)}")
@@ -340,13 +347,13 @@ class Robot:
                 if distAndMarkers is not None:
                     dist, _ = distAndMarkers
                     if dist[Z] < 150:
-                        self.state = ROBOT_STATE.SEARCHING_FOR_BIN
+                        self.SetState(ROBOT_STATE.SEARCHING_FOR_BIN)
                         self.client.cancel_goal()
                         return
             
         if self.client.get_state() == GoalStatus.SUCCEEDED:
             print("Reached destination")
-            self.state = ROBOT_STATE.SEARCHING_FOR_BIN
+            self.SetState(ROBOT_STATE.SEARCHING_FOR_BIN)
     
     def DetectBin(self, forward=True): 
         for _ in range(5):
@@ -369,8 +376,9 @@ class Robot:
         if (self.DetectBin(forward=False)):
             self.state = ROBOT_STATE.DOCKING
             return 
-    
+ 
         distAndMarkers = self.DetectBin()
+        
 
         if distAndMarkers is not None:
             dist, marker = distAndMarkers
@@ -397,9 +405,19 @@ class Robot:
                 self.rotate_new(15, self.rot + 180)
                 self.state = ROBOT_STATE.DOCKING
         else:
+            if self.cnt % 10 != 0:
+                return
+
+            if self.search_rotation_count > 3:
+                # we lost the bin
+                print(f"Lost bin with id: {self.goal_bin_id}")
+                self.binTracker.SetMissing(self.goal_bin_id, True)
+                self.state = ROBOT_STATE.IDLE
+                return
+            
+            self.search_rotation_count += 1
             # rotate in place until you find it, if rotated 2x we will go back to goal movement
-            if self.cnt % 10 == 0:
-                self.rotate(8, 25)
+            self.rotate(8, 25)
 
     def ShouldLoop(self):
         return self.running and not rospy.is_shutdown()
@@ -414,7 +432,7 @@ class Robot:
 
         if (distAndMarkers is None):
             print("swapping back to searching")
-            rbt.state = ROBOT_STATE.SEARCHING_FOR_BIN
+            self.SetState(ROBOT_STATE.SEARCHING_FOR_BIN)
             return 
 
         dist, markers = distAndMarkers
@@ -490,9 +508,9 @@ class Robot:
                 if len(distances) > 3 and abs(distances[-1] - distances[-3]) < .01:
                     break
                 prev_min_dist = min_dist
-
+            print("why are we stopping early", get_min_dist(), min_dist_limit)
             # add lift code ...
-            if min_dist <= min_dist_limit + .05:
+            if get_min_dist() <= min_dist_limit + .05:
                 # post lift code
                 # self.movebase_client(*self.get_dropoff())
                 # self.state = ROBOT_STATE.RETURNING
@@ -616,6 +634,9 @@ class Robot:
             elif cmd == "r":
                 angle = input("angle")
                 self.rotate(30, float(angle))
+            elif cmd == "rn":
+                angle = input("angle")
+                self.rotate_new(5.5, float(angle))
             elif cmd == "sp":
                 x, y, yaw = input("x, y, yaw").split()
                 self.SetPosition(float(x), float(y), float(yaw))

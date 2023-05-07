@@ -62,6 +62,16 @@ def updateTakeOut(binId, takeOut):
             binId = {binId}
         """
     )
+    
+def updateMissing(binId, missing):
+    cursor.execute( 
+        f"""
+        UPDATE Bins
+            SET Missing = {missing}
+        WHERE
+            binId = {binId}
+        """
+    )
 
 def updateLoc(binId, x, y):
     cursor.execute( 
@@ -102,7 +112,7 @@ def saveDbChanges():
 
 if __name__ == "__main__":
     setUp() 
-    insertRow(0, 0.0, 0.0, False, False, 0, 0, 2.5, 0)
+    insertRow(0, 0.0, 0.0, True, False, 0, 0)
     # insertRow(1, 1, 1, False, False, 0, -1)
     # fetchall returns tuple of columns 
     print(queryBin(0))

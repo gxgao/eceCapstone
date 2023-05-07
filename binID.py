@@ -40,7 +40,7 @@ class BinTracker:
     def __init__(self):
         self.currBin: Optional[Bin] = None 
         self.binToGet = None 
-        self.binDir = {} 
+        self.binDir: dict[int, Bin] = {} 
 
     def setupDb(self):
         dbInterface.setUp() 
@@ -57,7 +57,7 @@ class BinTracker:
             return None 
         binId, x, y, takeOut, missing, take_out_x, take_out_y, home_x, home_y = takeHomeBins[0] 
         if binId in self.binDir:
-            return self.binDir 
+            return self.binDir[binId] 
 
         self.binToGet = Bin(binId, x, y, takeOut, missing, take_out_x, take_out_y, home_x, home_y)
         return self.binToGet 
@@ -77,6 +77,10 @@ class BinTracker:
     def GetBinSide(self, aruco_id):
         return BIN_SIDE(aruco_id % 2) 
     
+    def SetMissing(self, binId, missing):
+        dbInterface.updateMissing(binId, missing)
+        if binId in self.binDir:
+            self.binDir[binId].missing = missing
 
     # takes list of ids and queries database and returns list of bins 
     def checkIds(self, markerIds):
