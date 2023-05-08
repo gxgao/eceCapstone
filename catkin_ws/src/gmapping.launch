@@ -1,6 +1,6 @@
 <launch>
 
-<node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.04191 0.01905 0.19812 3.14159 0 0 base_link laser 10" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.025 -0.023 0.19812 3.14159 0 0 base_link laser 40" />
   <include file="$(find rplidar_ros)/launch/rplidar.launch" />
   <include file="$(find create_bringup)/launch/create_2.launch" />
   #### start gmapping ############################################

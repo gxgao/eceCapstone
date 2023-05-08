@@ -40,7 +40,7 @@ OLD_ITERS = 2600
 
 OLD_RAISE_ITERS = 2800
 RAISE_ITERS = 3400
-LOWER_ITERS = 2600
+LOWER_ITERS = 2800
 
 import atexit
 GPIO.setmode(GPIO.BOARD)  # BOARD pin numbering scheme
